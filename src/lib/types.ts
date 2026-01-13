@@ -9,3 +9,14 @@ export type Prompt = {
     content: string,
     metrics?: Metrics
 }
+
+export type LlamaAPI = {
+    choices: {
+        delta: {
+            content: string
+        },
+        finish_reason: string
+    }[],
+    model: string,
+    timings: Metrics
+}

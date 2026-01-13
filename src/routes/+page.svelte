@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Metrics, Prompt } from "$lib/types";
+    import type { LlamaAPI, Metrics, Prompt } from "$lib/types";
 
     import Chat from "./chat.svelte";
     import Header from "./header.svelte";
@@ -39,7 +39,7 @@
                         if (dataStr === '[DONE]') break;
                         
                         try {
-                            const data = JSON.parse(dataStr);
+                            const data:LlamaAPI = JSON.parse(dataStr);
                             const content = data.choices[0].delta.content || "";
 
                             let newMetrics: Metrics | undefined = undefined;
@@ -67,7 +67,7 @@
             }
         } catch (error) {
             console.error("Error conectando con llama-server:", error);
-            history.push({role: "user", content: "error conectando con el servidor"})
+            history.push({role: "ai", content: "error conectando con el servidor"})
         }
     }
 
