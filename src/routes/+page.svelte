@@ -9,14 +9,23 @@
 
     async function handleNewPrompt(prompt: string) {
         history = [...history, { role: 'user', content: prompt }];
-        history = [...history, { role: 'ai', content: '' }];
+        history = [...history, { role: 'assistant', content: '' }];
+
+        const systemInstruction = {
+            role: "system", 
+            content: "Eres un asistente. Solo responde en texto plano. No uses JSON."
+        };
+
+        const message = [systemInstruction, ...history];
+
         try {
-            const response = await fetch('http://localhost:8081/v1/chat/completions', {
+            const response = await fetch('/api/chat/completions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    messages: history.slice(0, -1),
+                    messages: message,
                     model: "model.gguf",
+                    temperature: 0.7,
                     stream: true // Va pasando información cuando la tiene no espera a que este toda la respuesa completa
                 })
             })
@@ -67,7 +76,7 @@
             }
         } catch (error) {
             console.error("Error conectando con llama-server:", error);
-            history.push({role: "ai", content: "error conectando con el servidor"})
+            history.push({role: "assistant", content: "error conectando con el servidor"})
         }
     }
 

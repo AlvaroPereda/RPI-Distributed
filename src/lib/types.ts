@@ -5,7 +5,7 @@ export type Metrics = {
 }
 
 export type Prompt = {
-    role: "user" | "ai",
+    role: "user" | "assistant" | "system",
     content: string,
     metrics?: Metrics
 }
