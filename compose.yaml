@@ -1,0 +1,11 @@
+services:
+  backend:
+    image: alvaropereda/backend-rpi
+    build: ./backend
+    ports:
+      - "8081:8080"
+  frontend:
+    image: alvaropereda/frontend-rpi
+    build: ./frontend
+    ports:
+      - "8082:80"
