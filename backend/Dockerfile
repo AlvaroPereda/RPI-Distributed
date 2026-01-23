@@ -16,20 +16,24 @@ RUN cmake .. \
     -DGGML_RPC=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=OFF \
-    && cmake --build . --config Release --target llama-server -j$(nproc) 
+    -DLLAMA_BUILD_BORINGSSL=ON \
+    -DLLAMA_BUILD_LIBRESSL=ON \
+    && cmake --build . --config Release --target llama-server -j$(nproc)
 
 RUN strip -s bin/llama-server
 
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    libgomp1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/llama.cpp/build/bin/llama-server /llama-server
-COPY models/model.gguf /models/
 
 EXPOSE 8080
 
 CMD [ "./llama-server", \ 
-        "-m", "/models/model.gguf", \
+        "-hf", "ggml-org/gemma-3-1b-it-GGUF", \
         "-c", "2048", \
         "--host", "0.0.0.0"]
