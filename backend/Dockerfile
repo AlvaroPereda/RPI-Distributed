@@ -18,6 +18,7 @@ RUN cmake .. \
     -DBUILD_SHARED_LIBS=OFF \
     -DLLAMA_BUILD_BORINGSSL=ON \
     -DLLAMA_BUILD_LIBRESSL=ON \
+    -DGGML_NATIVE=OFF \
     && cmake --build . --config Release --target llama-server -j$(nproc)
 
 RUN strip -s bin/llama-server

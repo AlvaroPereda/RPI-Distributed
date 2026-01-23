@@ -1,16 +1,18 @@
-name: Build in arm64 and amd64 and push to Docker Hub
+name: Build Backend in arm64 and amd64 and push to Docker Hub
 
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - "backend/**"
   pull_request:
     branches: [ "main" ]
+    paths:
+      - "backend/**"
 
 jobs:
-
-  build:
+  backend:
     runs-on: ubuntu-latest
-    
     steps:
       -
         name: Checkout
@@ -35,4 +37,6 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ secrets.DOCKER_USERNAME }}/backend-rpi:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
