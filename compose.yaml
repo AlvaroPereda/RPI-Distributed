@@ -1,17 +1,28 @@
 services:
   backend:
     image: alvaropereda/backend-rpi
+    container_name: backend
     build: ./backend
     ports:
       - "8081:8080"
+      - "5000:5000"
     volumes:
       - models:/root/.cache/llama.cpp
+    networks:
+      - rpi-network
 
   frontend:
     image: alvaropereda/frontend-rpi
+    container_name: frontend
     build: ./frontend
     ports:
       - "8082:80"
+    networks:
+      - rpi-network
 
 volumes:
   models:
+
+networks:
+  rpi-network:
+    driver: bridge

@@ -31,10 +31,10 @@
     }
 
     const changeModel = async() => {
-        const result = await fetch("/api/model", {
+        const result = await fetch("/reload", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(selectedModel)
+            body: JSON.stringify({model_path: selectedModel})
         })
         if (result.ok) {
             console.log("Modelo cambiado correctamente");
@@ -76,7 +76,7 @@
                     <div class="select-wrapper">
                         <select class="model-select" title="Model Selection" onchange={changeModel} bind:value={selectedModel}> 
                             <option>ggml-org/gemma-3-1b-it-GGUF</option>
-                            <option>prueba</option>
+                            <option>bartowski/Llama-3.2-1B-Instruct-GGUF</option>
                         </select>
                     </div>
 

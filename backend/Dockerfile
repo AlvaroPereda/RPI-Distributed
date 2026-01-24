@@ -28,13 +28,12 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y \
     libgomp1 \
     curl \
+    python3 \
+    python3-flask \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/llama.cpp/build/bin/llama-server /llama-server
-
+COPY launcher.py launcher.py
 EXPOSE 8080
 
-CMD [ "./llama-server", \ 
-        "-hf", "ggml-org/gemma-3-1b-it-GGUF", \
-        "-c", "2048", \
-        "--host", "0.0.0.0"]
+CMD [ "python3", "launcher.py" ]
