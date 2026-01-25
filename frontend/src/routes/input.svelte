@@ -3,6 +3,7 @@
     let prompt = $state("");
     let textareaRef: HTMLTextAreaElement | null = null;
     let selectedModel = $state("ggml-org/gemma-3-1b-it-GGUF");
+    let device = $state("");
 
     function sendPrompt() {
         if (!prompt.trim()) return;
@@ -42,6 +43,21 @@
             console.error("Error al cambiar el modelo");
         }
     }
+
+    const addDevice = async() => {
+        const result = await fetch("devices", {
+            method: "POST",
+            headers: {"Content-Type": "aplicacion/json"},
+            body: JSON.stringify({device: device})
+        })
+        if(result.ok) {
+            console.log("Dispositvo añadido correctamente");
+        } else {
+            console.log("Error al añadir dispositivo");
+        }
+    }
+
+
 </script>
 
 <div class="input-container-fixed">
@@ -78,6 +94,15 @@
                             <option>ggml-org/gemma-3-1b-it-GGUF</option>
                             <option>bartowski/Llama-3.2-1B-Instruct-GGUF</option>
                         </select>
+                    </div>
+
+                    <div>
+                        <input 
+                            type="text" 
+                            placeholder="Device name"
+                            bind:value={device}
+                        />
+                        <button type="button" onclick={addDevice}>Add device</button>
                     </div>
 
                     <button 

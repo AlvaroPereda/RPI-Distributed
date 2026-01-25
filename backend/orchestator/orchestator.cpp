@@ -10,6 +10,8 @@
 using json = nlohmann::json;
 
 pid_t llama_pid = -1;
+std::vector<std::string> rpc_devices;
+std::string model = "ggml-org/gemma-3-1b-it-GGUF"; // Modelo por defecto
 
 void stop_background_llama() {
     if(llama_pid != -1) {
@@ -24,7 +26,7 @@ void stop_background_llama() {
 }
 
 
-void start_background_llama(std::string model) {
+void start_background_llama() {
 
     stop_background_llama();
 
@@ -38,6 +40,12 @@ void start_background_llama(std::string model) {
         args.push_back((char*)model.c_str());
         args.push_back((char*)"-c");
         args.push_back((char*)"2048");
+        if (rpc_devices.size() > 0) {
+            args.push_back((char*)"--rpc");
+            for (int i = 0; i < rpc_devices.size(); i++) {
+                args.push_back((char*)rpc_devices[i].c_str());
+            }
+        }
         args.push_back((char*)"--host");
         args.push_back((char*)"0.0.0.0");
         args.push_back((char*)"--port");
@@ -73,10 +81,12 @@ int main() {
             if (body.contains("model")) {
                 std::string model = body["model"];
 
-                start_background_llama(model);
+                ::model = model;
+
+                start_background_llama();
 
                 res.status = 200;
-                res.set_content("funcionó", "text/plain");
+                res.set_content("ok", "text/plain");
             } else {
                 res.status = 400;
                 res.set_content("{\"error\": \"The model attribute is missing\"}", "application/json");
@@ -89,8 +99,34 @@ int main() {
         }
     });
 
+    svr.Post("/devices", [](const httplib::Request& req, httplib::Response& res) {
+        try
+        {
+            auto body = json::parse(req.body);
+            
+            if (body.contains("device")) {
+                std::string device = body["device"].get<std::string>() + ":50051";
+
+                rpc_devices.push_back(device);
+
+                start_background_llama();
+
+                res.status = 200;
+                res.set_content("ok", "text/plain");
+            } else {
+                res.status = 400;
+                res.set_content("{\"error\": \"The device attribute is missing\"}", "application/json");
+            }
+        }
+        catch(...)
+        {
+            res.status = 400;
+            res.set_content("{\"error\": \"Invalid JSON\"}", "application/json");
+        }
+    });
+
     std::cout << "Starting server on port 5000..." << std::endl;
     svr.listen("0.0.0.0", 5000);
-
+    start_background_llama();
     return 0;
 }
