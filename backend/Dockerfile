@@ -23,17 +23,27 @@ RUN cmake .. \
 
 RUN strip -s bin/llama-server
 
+FROM ubuntu:22.04 AS builder-orchestator
+
+RUN apt-get update && apt-get install -y g++
+
+WORKDIR /app
+
+COPY ./orchestator .
+
+RUN g++ -O3 -static-libgcc -static-libstdc++ orchestator.cpp -o orchestator -lpthread
+
+
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
     libgomp1 \
     curl \
-    python3 \
-    python3-flask \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/llama.cpp/build/bin/llama-server /llama-server
-COPY launcher.py launcher.py
+COPY --from=builder-orchestator /app/orchestator .
+
 EXPOSE 8080
 
-CMD [ "python3", "launcher.py" ]
+ENTRYPOINT ["./orchestator"]

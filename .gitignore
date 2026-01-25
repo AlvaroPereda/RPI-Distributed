@@ -2,3 +2,4 @@
 build/
 backend/*
 !backend/Dockerfile
+!backend/orchestator

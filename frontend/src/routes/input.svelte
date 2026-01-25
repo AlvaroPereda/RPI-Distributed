@@ -34,7 +34,7 @@
         const result = await fetch("/reload", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({model_path: selectedModel})
+            body: JSON.stringify({model: selectedModel})
         })
         if (result.ok) {
             console.log("Modelo cambiado correctamente");
