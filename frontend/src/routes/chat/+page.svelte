@@ -1,21 +1,89 @@
 <script lang="ts">
-    import type { Prompt } from "$lib/types";
+    import type { LlamaAPI, Metrics, Prompt } from "$lib/types";
     import Chat from "../../components/chat.svelte";
     import Header from "../../components/header.svelte";
     import Input from "../../components/input.svelte";
 
+    let history: Prompt[] = $state([])
 
-    let history:Prompt = {
-        role: "user",
-        content: "buenas, como estás"
+    const handleNewPrompt = async(prompt: string) => {
+        history = [...history, { role: 'user', content: prompt }]
+        history = [...history, { role: 'assistant', content: '' }];
+
+        const systemInstruction:Prompt = {
+            role: "system",
+            content: "Eres un asistente. Solo responde en texto plano. No uses JSON."
+        }
+
+        const message = [systemInstruction, ...history]
+
+        try {
+            const response = await fetch("/chat/completions", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: message,
+                    model: "model.gguf",
+                    temperature: 0.7,
+                    stream: true // Va pasando información cuando la tiene no espera a que este toda la respuesa completa
+                })
+            })
+            if (response.status !== 200) throw new Error("Error en la respuesta del servidor.")
+            if (!response.body) throw new Error("No response body")
+
+            const reader = response.body.getReader(); // Abre un canal para toda la información
+            const decoder = new TextDecoder();
+            let aiMessageIndex = history.length - 1;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.replace('data: ', '').trim();
+                        if (dataStr === '[DONE]') break;
+                        
+                        try {
+                            const data:LlamaAPI = JSON.parse(dataStr);
+                            const content = data.choices[0].delta.content || "";
+
+                            let newMetrics: Metrics | undefined = undefined;
+                            
+                            if (data.timings) {
+                                newMetrics = {
+                                    predicted_per_second: Number((data.timings.predicted_per_second).toFixed(2)),
+                                    predicted_ms: Number((data.timings.predicted_ms / 1000).toFixed(2)),
+                                    predicted_n: data.timings.predicted_n
+                                };
+                            }
+                            
+                            // Esto se hace así ya que como se manda por partes la respuesta no se puede hacer un push normal, ya que quedaría en distintos mensajes del chat
+                            const newHistory = [...history];
+                            const currentMsg = newHistory[aiMessageIndex];
+                            currentMsg.content += content;
+                            if (newMetrics) 
+                                currentMsg.metrics = newMetrics;
+                            history = newHistory; 
+
+                        } catch (e) {
+                            console.error("Error parseando JSON", e);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Error con la solicitud: ${error}`)
+            history.push({role: 'assistant', content: "Ha ocurrido un error al procesar tu solicitud."})
+        }
     }
-    let history2:Prompt = {
-        role: "assistant",
-        content: "Buenas soy un asistente de IA"
-    }
+
 </script>
 <div>
-    <Header model="ggml-org/gemma-3-1b-it-GGUF"/>
-    <Chat history={[history, history2]}/>
-    <Input />
+    <Header model="ggml-org/gemma-3-1b-it-GGUF" />
+    <Chat {history} />
+    <Input {handleNewPrompt} />
 </div>
