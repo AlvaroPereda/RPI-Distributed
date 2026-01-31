@@ -1,8 +1,8 @@
 <script lang="ts">
     import type { LlamaAPI, Metrics, Prompt } from "$lib/types";
-    import Chat from "../../components/chat.svelte";
-    import Header from "../../components/header.svelte";
-    import Input from "../../components/input.svelte";
+    import Chat from "../../components/Chat.svelte";
+    import Header from "../../components/Header.svelte";
+    import Input from "../../components/Input.svelte";
 
     let history: Prompt[] = $state([])
 

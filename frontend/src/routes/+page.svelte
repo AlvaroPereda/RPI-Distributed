@@ -1,11 +1,16 @@
-<script>
-    import Settings from "../components/settings.svelte";
+<script lang="ts">
+    import type { Device } from "$lib/types";
+    import ClusterCanvas from "../components/ClusterCanvas.svelte";
+    import Settings from "../components/Settings.svelte";
 
+    let device: Device[] = [
+        {name: "rpi5", ip: "192.168.1.10"},
+        {name: "rpi3", ip: "192.168.1.11"},
+        {name: "rpi3b", ip: "192.168.1.12"}
+    ]
 
 </script>
 <main>
-    <div>
-        
-    </div>
+    <ClusterCanvas cluster={device}/>
     <Settings />
 </main>

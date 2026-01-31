@@ -1,11 +1,7 @@
 <script lang="ts">
     import type { Prompt } from "$lib/types";
 
-    type ChatProps = {
-        history: Prompt[]
-    }
-
-    let { history }: ChatProps= $props()
+    let { history }: { history: Prompt[] }= $props()
 
 </script>
 

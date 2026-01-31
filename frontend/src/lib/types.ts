@@ -20,3 +20,8 @@ export type LlamaAPI = {
     model: string,
     timings: Metrics
 }
+
+export type Device = {
+    name: string,
+    ip: string
+}
