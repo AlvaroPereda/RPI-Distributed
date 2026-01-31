@@ -82,8 +82,8 @@
     }
 
 </script>
-<div>
-    <Header model="ggml-org/gemma-3-1b-it-GGUF" />
+<main>
+    <Header />
     <Chat {history} />
     <Input {handleNewPrompt} />
-</div>
+</main>

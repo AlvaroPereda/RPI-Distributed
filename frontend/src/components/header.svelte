@@ -1,14 +1,15 @@
 <script lang="ts">
-    let { model }: { model: string } = $props();
+    import { model } from "$lib/stores";
+    import { goto } from "$app/navigation";
 
     const goBack = () => {
-        window.location.href = "/"
+        goto("/")
     }
 </script>
 
 <header class="header">
     <button onclick={goBack}>Back to Config</button>
-    <h1>{model}</h1>
+    <h1>{$model}</h1>
 </header>
 
 <style>

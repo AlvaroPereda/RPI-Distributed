@@ -65,6 +65,36 @@ void start_background_llama() {
     }
 }
 
+bool wait_for_server_ready() {
+    httplib::Client cli("localhost", 8080);
+    cli.set_connection_timeout(0, 500000); // 0.5 segundos timeout conexión
+
+    int max_retries = 1200; // Son 10 minutos
+
+    for (int i = 0; i < max_retries; i++) {
+        int status;
+        pid_t result = waitpid(llama_pid, &status, WNOHANG);
+        if (result == llama_pid) {
+            std::cerr << "Error: llama-server process terminated unexpectedly." << std::endl;
+            return false;
+        }
+
+        if (auto res = cli.Get("/health")) {
+            if (res->status == 200) {
+                std::cout << "Server is UP and Ready!" << std::endl;
+                return true;
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        if (i % 10 == 0) std::cout << "Waiting for model to load..." << std::endl;
+    }
+
+    std::cerr << "Error: Timeout waiting for server to start." << std::endl;
+    return false;
+
+}
+
 int main() {
     httplib::Server svr;
 
@@ -85,8 +115,13 @@ int main() {
 
                 start_background_llama();
 
-                res.status = 200;
-                res.set_content("ok", "text/plain");
+                if (wait_for_server_ready()) {
+                    res.status = 200;
+                    res.set_content("ok", "text/plain");
+                } else {
+                    res.status = 500;
+                    res.set_content("{\"error\": \"Model failed to load or timeout\"}", "application/json");
+                }
             } else {
                 res.status = 400;
                 res.set_content("{\"error\": \"The model attribute is missing\"}", "application/json");
