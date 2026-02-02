@@ -32,10 +32,11 @@
 
 <style>
     nav {
-        width: 300px;
-        position: fixed;
-        right: 0;
+        flex-grow: 1;
+        position: absolute;
         top: 0;
+        right: 0;
+        width: 300px;
         height: 100vh;
         padding: 2rem;
         background-color: rgb(62, 62, 62);

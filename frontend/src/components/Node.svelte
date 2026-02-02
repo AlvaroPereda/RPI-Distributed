@@ -21,6 +21,7 @@
 
 <style>
     .node-container {
+        position: absolute;
         display: flex;
         flex-direction: column;
         align-items: center;
