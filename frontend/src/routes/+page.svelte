@@ -2,6 +2,7 @@
     import type { Device } from "$lib/types";
     import ClusterCanvas from "../components/ClusterCanvas.svelte";
     import Settings from "../components/Settings.svelte";
+    import SSHModel from "../components/SSHModel.svelte";
 
     let device: Device[] = [
         {name: "rpi5", ip: "192.168.1.10"},
@@ -12,6 +13,7 @@
 </script>
 <main>
     <ClusterCanvas cluster={device}/>
+    <SSHModel />
     <Settings />
 </main>
 
