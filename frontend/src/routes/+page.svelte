@@ -5,9 +5,9 @@
     import SSHModel from "../components/SSHModel.svelte";
 
     let device: Device[] = [
-        {name: "rpi5", ip: "192.168.1.10"},
-        {name: "rpi3", ip: "192.168.1.11"},
-        {name: "rpi3b", ip: "192.168.1.12"}
+        {user: "rpi5", ip: "192.168.1.10"},
+        {user: "rpi3", ip: "192.168.1.11"},
+        {user: "rpi3b", ip: "192.168.1.12"}
     ]
 
 </script>

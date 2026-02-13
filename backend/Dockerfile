@@ -23,22 +23,22 @@ RUN cmake .. \
 
 RUN strip -s bin/llama-server
 
-FROM ubuntu:22.04 AS builder-orchestator
+FROM debian:bookworm-slim AS builder-orchestator
 
-RUN apt-get update && apt-get install -y g++
+RUN apt-get update && apt-get install -y g++ libssh-dev
 
 WORKDIR /app
 
 COPY ./orchestator .
 
-RUN g++ -O3 -static-libgcc -static-libstdc++ orchestator.cpp -o orchestator -lpthread
-
+RUN g++ -O3 -static-libgcc -static-libstdc++ orchestator.cpp -o orchestator -lpthread -lssh
 
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
     libgomp1 \
     curl \
+    libssh-4 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/llama.cpp/build/bin/llama-server /llama-server

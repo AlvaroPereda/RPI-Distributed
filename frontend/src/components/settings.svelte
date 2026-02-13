@@ -10,10 +10,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({model: $model})
         })
-        console.log(response)
-        if (response.ok)
-            goto("/chat")
-
+        if (response.ok) goto("/chat")
     }
 </script>
 

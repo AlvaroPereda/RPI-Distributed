@@ -3,6 +3,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <signal.h>
+#include <libssh/libssh.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "httplib.h"
 #include "json.hpp"
@@ -63,6 +66,76 @@ void start_background_llama() {
     } else {
         perror("Fork failed");
     }
+}
+
+std::string connect_ssh(std::string ip, std::string user, std::string password) {
+    ssh_session session;
+    ssh_channel channel;
+    int rc;
+    char buffer[256];
+    int nbytes;
+    // --- CONFIGURACIÓN ---
+    const char* rpi_ip = ip.c_str();
+    const char* rpi_user = user.c_str();
+    const char* rpi_pass = password.c_str();
+    // Comando que hay que mejorar metiendo un .sh y que haga ahí todas las comprobaciones 
+    const char* comando = "sh -c 'if [ $(id -u) -eq 0 ] || groups | grep -q docker; "
+                        "then CMD=\"docker\"; else CMD=\"sudo docker\"; fi; "
+                        "$CMD run -d --rm -p 50051:50051 --name worker llama-full /app/llama.cpp/build/bin/rpc-server -p 50051 -H 0.0.0.0'";
+
+    // 1. Iniciar sesión
+    session = ssh_new();
+    if (session == NULL) return "Error configuring ssh";
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, rpi_ip);
+    ssh_options_set(session, SSH_OPTIONS_USER, rpi_user);
+
+    // Desactivar chequeo estricto de llaves (Solo para pruebas)
+    int strict_check = 0;
+    ssh_options_set(session, SSH_OPTIONS_STRICTHOSTKEYCHECK, &strict_check);
+
+    // 2. Conectar
+    std::cout << "Connecting to " << rpi_ip << "..." << std::endl;
+    rc = ssh_connect(session);
+    if (rc != SSH_OK) {
+        std::cerr << "Error with the connection: " << ssh_get_error(session) << std::endl;
+        ssh_free(session);
+        return "SSH connection could not be established to the remote host";
+    }
+
+    // 3. Autenticar (Password)
+    std::cout << "Authenticating..." << std::endl;
+    rc = ssh_userauth_password(session, NULL, rpi_pass);
+    if (rc != SSH_AUTH_SUCCESS) {
+        std::cerr << "Error with the authentication: " << ssh_get_error(session) << std::endl;
+        ssh_disconnect(session);
+        ssh_free(session);
+        return "Invalid username or password for the provided user account";
+    }
+
+    // 4. Ejecutar comando
+    std::cout << "Running: " << comando << std::endl;
+    channel = ssh_channel_new(session);
+    rc = ssh_channel_open_session(channel);
+    rc = ssh_channel_request_exec(channel, comando);
+
+    // 5. Leer respuesta
+    while ((nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0)) > 0) {
+        if (fwrite(buffer, 1, nbytes, stdout) != (size_t)nbytes) {
+            ssh_channel_close(channel);
+            ssh_channel_free(channel);
+            return "Error while retrieving command output from remote host";
+        }
+    }
+
+    // 6. Limpieza
+    ssh_channel_send_eof(channel);
+    ssh_channel_close(channel);
+    ssh_channel_free(channel);
+    ssh_disconnect(session);
+    ssh_free(session);
+
+    return "";
 }
 
 bool wait_for_server_ready() {
@@ -134,20 +207,28 @@ int main() {
         }
     });
 
-    svr.Post("/devices", [](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/connect", [](const httplib::Request& req, httplib::Response& res) {
         try
         {
             auto body = json::parse(req.body);
             
-            if (body.contains("device")) {
-                std::string device = body["device"].get<std::string>() + ":50051";
+            if (body.contains("ip") || body.contains("user") || body.contains("password")) {
+                std::string ip = body["ip"];
+                std::string user = body["user"];
+                std::string password = body["password"];
+                std::string message = connect_ssh(ip, user, password);
+                std::string ip_with_port = body["ip"].get<std::string>() + ":50051";
 
-                rpc_devices.push_back(device);
+                if (message != "") {
+                res.status = 400;
+                res.set_content(json({{"error", message}}).dump(), "application/json");
+                } else {
+                    rpc_devices.push_back(ip_with_port);
+                    start_background_llama();
 
-                start_background_llama();
-
-                res.status = 200;
-                res.set_content("ok", "text/plain");
+                    res.status = 200;
+                    res.set_content("ok", "text/plain");
+                }
             } else {
                 res.status = 400;
                 res.set_content("{\"error\": \"The device attribute is missing\"}", "application/json");
@@ -162,6 +243,5 @@ int main() {
 
     std::cout << "Starting server on port 5000..." << std::endl;
     svr.listen("0.0.0.0", 5000);
-    start_background_llama();
     return 0;
 }

@@ -22,7 +22,7 @@ export type LlamaAPI = {
 }
 
 export type Device = {
-    name: string,
+    user: string,
     ip: string,
     password?: string
 }
