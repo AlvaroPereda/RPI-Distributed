@@ -14,7 +14,7 @@
     </div>
 
     <div class="info">
-        <span class="name">{device.name}</span>
+        <span class="name">{device.user}</span>
         <span class="ip">({device.ip})</span>
     </div>
 </div>

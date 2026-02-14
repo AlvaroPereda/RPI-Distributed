@@ -1,6 +1,7 @@
 <script lang="ts">
     import { model } from "$lib/stores";
     import { goto } from "$app/navigation";
+    import SSHModel from "./SSHModel.svelte";
 
     const startChat = async() => {
         if (!$model) return
@@ -25,6 +26,7 @@
     </select>
 
     <button onclick={startChat}>START CHAT</button>
+    <SSHModel />
 </nav>
 
 <style>

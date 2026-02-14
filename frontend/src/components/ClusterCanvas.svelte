@@ -1,8 +1,6 @@
 <script lang="ts">
-    import type { Device } from "$lib/types";
     import Node from "./Node.svelte";
-
-    let { cluster }: { cluster: Device[] } = $props();
+    import { deviceState } from "$lib/deviceState.svelte";
 
     const radius = 250; 
     const size = 600; 
@@ -25,8 +23,8 @@
 
 <div class="circle-container">
     <div class="circle-area" style="width: {size}px; height: {size}px;">
-        {#each cluster as device, index}
-            <div class="node-wrapper" style={getPositionStyle(index, cluster.length)}>
+        {#each deviceState.current as device, index}
+            <div class="node-wrapper" style={getPositionStyle(index, deviceState.current.length)}>
                 <Node {device} />
             </div>
         {/each}

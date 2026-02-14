@@ -224,8 +224,6 @@ int main() {
                 res.set_content(json({{"error", message}}).dump(), "application/json");
                 } else {
                     rpc_devices.push_back(ip_with_port);
-                    start_background_llama();
-
                     res.status = 200;
                     res.set_content("ok", "text/plain");
                 }
