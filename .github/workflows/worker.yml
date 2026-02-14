@@ -1,17 +1,17 @@
-name: Build Backend in arm64 and amd64 and push to Docker Hub
+name: Build worker in arm64 and amd64 and push to Docker Hub
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - "backend/**"
+      - "worker/**"
   pull_request:
     branches: [ "main" ]
     paths:
-      - "backend/**"
+      - "worker/**"
 
 jobs:
-  backend:
+  worker:
     runs-on: ubuntu-latest
     steps:
       -
@@ -33,10 +33,10 @@ jobs:
         name: Build and push Docker image in both architectures
         uses: docker/build-push-action@v6
         with:
-          context: ./backend/
+          context: ./worker/
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ secrets.DOCKER_USERNAME }}/backend-rpi:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/llama-worker:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

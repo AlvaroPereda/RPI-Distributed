@@ -79,10 +79,12 @@ std::string connect_ssh(std::string ip, std::string user, std::string password) 
     const char* rpi_user = user.c_str();
     const char* rpi_pass = password.c_str();
     // Comando que hay que mejorar metiendo un .sh y que haga ahí todas las comprobaciones 
-    const char* comando = "sh -c 'if [ $(id -u) -eq 0 ] || groups | grep -q docker; "
+    /*const char* comando = "sh -c 'if [ $(id -u) -eq 0 ] || groups | grep -q docker; "
                         "then CMD=\"docker\"; else CMD=\"sudo docker\"; fi; "
-                        "$CMD run -d --rm -p 50051:50051 --name worker llama-full /app/llama.cpp/build/bin/rpc-server -p 50051 -H 0.0.0.0'";
+                        "$CMD run -d --rm -p 50051:50051 --name llama-worker llama-worker";
+    */
 
+    const char* comando = "sudo docker run -d --rm -p 50051:50051 --name llama-worker llama-worker";
     // 1. Iniciar sesión
     session = ssh_new();
     if (session == NULL) return "Error configuring ssh";
