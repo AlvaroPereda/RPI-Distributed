@@ -19,6 +19,17 @@ services:
       - "8082:80"
     networks:
       - rpi-network
+  
+  rag:
+    image: alvaropereda/rag-rpi
+    container_name: rag
+    build: ./backend/RAG
+    ports:
+      - "6000:6000"
+    volumes:
+      - models:/root/.cache/llama.cpp
+    networks:
+      - rpi-network
 
 volumes:
   models:
