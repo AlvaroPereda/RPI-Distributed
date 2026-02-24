@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "json.hpp"
-#include "httplib.h"
+#include <cpp-httplib/httplib.h>
 #include "rpc-embedding.hpp"
 
 using json = nlohmann::json;
@@ -17,7 +17,7 @@ int main() {
             if (body.contains("prompt") || body.contains("use_rag")) {
                 std::string prompt = body["prompt"];
                 bool use_rag = body.value("use_rag", false);
-
+                
                 std::string context = "";
                 if (use_rag) {
                     RagResult rag_result = generate_embeddings(prompt)[0];
@@ -29,50 +29,57 @@ int main() {
                     enriched_prompt = "Contexto relevante:\n" + context + "\n\n---\nPregunta: " + prompt;
                 }
 
+                std::cout << "Received context: " << enriched_prompt << std::endl;
+
                 json llama_body = {
-                    {"messages", enriched_prompt},
-                    {"temperature", 0,7},
+                    {"messages", {
+                        {
+                            {"role", "user"},
+                            {"content", enriched_prompt}
+                        }
+                    }},
+                    {"temperature", 0.7},
                     {"stream", true}
                 };
                 std::string llama_body_str = llama_body.dump();
-
+        
                 res.set_header("Content-Type", "text/event-stream");
                 res.set_header("Cache-Control", "no-cache");
                 res.set_header("Connection", "keep-alive");
                 res.set_header("Access-Control-Allow-Origin", "*");
 
-                httplib::Client llama_client("localhost", 8000);
-                llama_client.set_read_timeout(60, 0);
-
                 res.set_chunked_content_provider(
                     "text/event-stream",
                     [llama_body_str](size_t /*offset*/, httplib::DataSink& sink) {
-                        httplib::Client inner_client("localhost", 8000);
-                        inner_client.set_read_timeout(60, 0);
+                        httplib::Client cli("backend", 8080);
+                        cli.set_read_timeout(120, 0);
 
-                        auto stream_handle = inner_client.open_stream(
-                            "POST",
+                        auto content_receiver = [&](const char *data, size_t data_length) {
+                            if (!sink.write(data, data_length)) {
+                                return false; 
+                            }
+                            return true;
+                        };
+
+                        httplib::Headers headers = {
+                            {"Accept", "text/event-stream"}
+                        };
+                        
+                        auto result = cli.Post(
                             "/chat/completions",
-                            {},
-                            {},
+                            headers,
                             llama_body_str,
-                            "application/json"
+                            "application/json",
+                            content_receiver
                         );
 
-                        if (stream_handle.error != httplib::Error::Success) {
-                            sink.done();
-                            return false;
+                        if (!result || result->status != 200) {
+                            std::cerr << "Error en proxy: " 
+                                    << (result ? std::to_string(result->status) : "Fallo de conexión") 
+                                    << std::endl;
                         }
-
-                        char buf[4096];
-                        while (true) {
-                            auto bytes_read = stream_handle.read(buf, sizeof(buf));
-                            if (bytes_read <= 0) break;
-                            if (!sink.write(buf, bytes_read)) break;
-                        }
-
-                        sink.done();
-                        return true;
+                        sink.done(); // Se devuelve al frontend
+                        return true; 
                     }
                 );
             } else {

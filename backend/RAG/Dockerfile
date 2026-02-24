@@ -13,9 +13,10 @@ WORKDIR /llama.cpp
 
 COPY src/ ./examples/rpc-embedding
 COPY llama.cpp/CMakeLists.txt ./examples/CMakeLists.txt
+COPY rag.db ./build/
 
 WORKDIR /llama.cpp/build
 
-RUN cmake .. && make -j$(nproc) main
+RUN cmake -DLLAMA_BUILD_BORINGSSL=ON .. && make -j$(nproc) main
 
 ENTRYPOINT ["./bin/main"]
