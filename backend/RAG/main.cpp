@@ -17,7 +17,7 @@ int main() {
             if (body.contains("prompt") || body.contains("use_rag")) {
                 std::string prompt = body["prompt"];
                 bool use_rag = body.value("use_rag", false);
-                
+
                 std::string context = "";
                 if (use_rag) {
                     RagResult rag_result = generate_embeddings(prompt)[0];
@@ -42,7 +42,7 @@ int main() {
                     {"stream", true}
                 };
                 std::string llama_body_str = llama_body.dump();
-        
+
                 res.set_header("Content-Type", "text/event-stream");
                 res.set_header("Cache-Control", "no-cache");
                 res.set_header("Connection", "keep-alive");
@@ -56,7 +56,7 @@ int main() {
 
                         auto content_receiver = [&](const char *data, size_t data_length) {
                             if (!sink.write(data, data_length)) {
-                                return false; 
+                                return false;
                             }
                             return true;
                         };
@@ -64,7 +64,7 @@ int main() {
                         httplib::Headers headers = {
                             {"Accept", "text/event-stream"}
                         };
-                        
+
                         auto result = cli.Post(
                             "/chat/completions",
                             headers,
@@ -74,12 +74,12 @@ int main() {
                         );
 
                         if (!result || result->status != 200) {
-                            std::cerr << "Error en proxy: " 
-                                    << (result ? std::to_string(result->status) : "Fallo de conexión") 
+                            std::cerr << "Error en proxy: "
+                                    << (result ? std::to_string(result->status) : "Fallo de conexión")
                                     << std::endl;
                         }
                         sink.done(); // Se devuelve al frontend
-                        return true; 
+                        return true;
                     }
                 );
             } else {
@@ -92,7 +92,7 @@ int main() {
             res.status = 400;
             res.set_content("{\"error\": \"Invalid JSON\"}", "application/json");
         }
-        
+
     });
 
     svr.Post("/document", [](const httplib::Request& req, httplib::Response& res) {

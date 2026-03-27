@@ -11,7 +11,10 @@ RUN git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
 
 WORKDIR /llama.cpp
 
-COPY src/ ./examples/rpc-embedding
+COPY main.cpp         ./examples/rpc-embedding/main.cpp
+COPY src/             ./examples/rpc-embedding/src/
+COPY include/         ./examples/rpc-embedding/include/
+COPY CMakeLists.txt   ./examples/rpc-embedding/CMakeLists.txt
 COPY llama.cpp/CMakeLists.txt ./examples/CMakeLists.txt
 COPY rag.db ./build/
 

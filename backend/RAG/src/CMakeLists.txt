@@ -1,5 +1,0 @@
-set(TARGET main)
-add_executable(${TARGET} main.cpp rpc-embedding.cpp storage.cpp)
-install(TARGETS ${TARGET} RUNTIME)
-target_link_libraries(${TARGET} PRIVATE common llama ${CMAKE_THREAD_LIBS_INIT} sqlite3)
-target_compile_features(${TARGET} PRIVATE cxx_std_17)
