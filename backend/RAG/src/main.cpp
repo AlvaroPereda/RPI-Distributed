@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "json.hpp"
+#include <nlohmann/json.hpp>
 #include <cpp-httplib/httplib.h>
 #include "rpc-embedding.hpp"
 
