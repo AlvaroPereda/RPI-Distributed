@@ -80,8 +80,15 @@
     }
 
 </script>
-<main>
+<main class="chat-page">
     <Header />
     <Chat {history} />
     <Input {handleNewPrompt} />
 </main>
+
+<style>
+    .chat-page {
+        background-color: var(--bg-deep);
+        min-height: 100vh;
+    }
+</style>

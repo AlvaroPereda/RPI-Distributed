@@ -15,67 +15,117 @@
         handleNewPrompt(prompt)
         prompt = ""
     }
-    
+
 </script>
 
-<div class="container-input">
-    <div>
-        <textarea 
+<div class="input-wrapper">
+    <div class="input-container">
+        <textarea
             bind:value={prompt}
             onkeydown={handleKeydown}
-            placeholder="Type a message"
+            placeholder="Send a message…"
+            rows="1"
         ></textarea>
-        <button type="button" aria-label="Attachments" onclick={sendPrompt}>
-            <svg viewBox="0 0 24 24" fill="currentColor">
+        <button type="button" aria-label="Send message" onclick={sendPrompt} class="send-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
             </svg>
         </button>
     </div>
+    <p class="input-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</p>
 </div>
 
 <style>
-    .container-input {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .input-wrapper {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        background-color: rgb(44, 44, 44);
-        padding: 10px;
-        box-shadow: 0 -2px 5px rgba(140, 140, 140, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px 24px 20px;
+        background: linear-gradient(to top, var(--bg-deep) 70%, transparent);
+        z-index: 50;
+    }
 
+    .input-container {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        width: 100%;
+        max-width: 760px;
+        background-color: var(--bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius-lg);
+        padding: 12px 12px 12px 18px;
+        transition: border-color 0.2s ease;
+    }
 
-        textarea {
-            background-color: transparent;
-            color: white;
-            border: 1px solid rgba(140, 140, 140, 0.1);
-            resize: none;
-            border-radius: 5px;
-            width: 700px;
-            height: 100px;
-            font-size: 16px;
-        }
+    .input-container:focus-within {
+        border-color: var(--text-muted);
+    }
 
-        button {
-            background-color: rgb(62, 62, 62);
-            width: 40px;
-            height: 40px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: 10px;
-            margin-bottom: 5px;
-        }
+    textarea {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        font-size: 14px;
+        line-height: 1.6;
+        resize: none;
+        min-height: 24px;
+        max-height: 180px;
+        overflow-y: auto;
+        padding: 0;
+    }
 
-        button:hover {
-            background-color: rgb(80, 80, 80);
-        }
+    textarea::placeholder {
+        color: var(--text-muted);
+    }
 
-        button svg {
-            width: 20px;
-            height: 20px;
-        }
+    .send-btn {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background-color: var(--color-accent-green);
+        color: #000;
+        border: none;
+        border-radius: var(--border-radius-md);
+        cursor: pointer;
+        transition: box-shadow 0.2s ease, transform 0.15s ease, background-color 0.2s ease;
+        box-shadow: var(--shadow-glow);
+    }
+
+    .send-btn:hover {
+        background-color: #6ee8a0;
+        box-shadow: 0 0 22px rgba(74, 222, 128, 0.5);
+        transform: scale(1.05);
+    }
+
+    .send-btn:active {
+        transform: scale(0.96);
+    }
+
+    .input-hint {
+        margin: 8px 0 0;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    .input-hint kbd {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        background-color: var(--bg-surface-elevated);
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        padding: 1px 5px;
+        color: var(--text-secondary);
     }
 </style>
