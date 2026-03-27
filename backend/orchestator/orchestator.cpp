@@ -84,7 +84,7 @@ std::string connect_ssh(std::string ip, std::string user, std::string password) 
                         "$CMD run -d --rm -p 50051:50051 --name llama-worker llama-worker";
     */
 
-    const char* comando = "sudo docker run -d --rm -p 50051:50051 --name llama-worker llama-worker";
+    const char* comando = "sudo docker run -d --rm -p 50051:50051 --name llama-worker alvaropereda/llama-worker";
     // 1. Iniciar sesión
     session = ssh_new();
     if (session == NULL) return "Error configuring ssh";

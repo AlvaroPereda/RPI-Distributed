@@ -7,7 +7,7 @@ services:
       - "8081:8080"
       - "5000:5000"
     volumes:
-      - models:/root/.cache/llama.cpp
+      - models:/root/.cache/huggingface/hub
     networks:
       - rpi-network
 
@@ -27,12 +27,13 @@ services:
     ports:
       - "6000:6000"
     volumes:
-      - models:/root/.cache/llama.cpp
+      - models:/root/.cache/huggingface/hub
     networks:
       - rpi-network
 
 volumes:
   models:
+    name: llm-models
 
 networks:
   rpi-network:
