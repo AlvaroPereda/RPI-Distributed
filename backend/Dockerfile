@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
     git \
-    && rm -rf  /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -25,13 +25,22 @@ RUN strip -s bin/llama-server
 
 FROM debian:bookworm-slim AS builder-orchestator
 
-RUN apt-get update && apt-get install -y g++ libssh-dev
+RUN apt-get update && apt-get install -y \
+    g++ \
+    cmake \
+    pkg-config \
+    libssh-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY ./orchestator .
 
-RUN g++ -O3 -static-libgcc -static-libstdc++ orchestator.cpp -o orchestator -lpthread -lssh
+RUN cmake -S . -B build && \
+    cmake --build build -j$(nproc) --config Release -t orchestator && \
+    mv build/orchestator . && \
+    strip -s orchestator
+
 
 FROM debian:bookworm-slim
 

@@ -16,10 +16,11 @@ COPY src/             ./examples/rpc-embedding/src/
 COPY include/         ./examples/rpc-embedding/include/
 COPY CMakeLists.txt   ./examples/rpc-embedding/CMakeLists.txt
 COPY llama.cpp/CMakeLists.txt ./examples/CMakeLists.txt
-COPY rag.db ./build/
+COPY rag.db .
 
-WORKDIR /llama.cpp/build
+RUN cmake -S . -B build -DLLAMA_BUILD_BORINGSSL=ON && \
+    cmake --build build -j$(nproc) --config Release -t main && \
+    mv build/bin/main . && \
+    strip -s main
 
-RUN cmake -DLLAMA_BUILD_BORINGSSL=ON .. && make -j$(nproc) main
-
-ENTRYPOINT ["./bin/main"]
+ENTRYPOINT ["./main"]
