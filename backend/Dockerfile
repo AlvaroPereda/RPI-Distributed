@@ -24,7 +24,7 @@ RUN cmake .. \
 RUN strip -s bin/llama-server
 
 
-FROM debian:bookworm-slim AS builder-orchestator
+FROM debian:bookworm-slim AS builder-orchestrator
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -38,16 +38,16 @@ RUN git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
 
 WORKDIR /llama.cpp
 
-COPY orchestator.cpp         ./examples/rpc-embedding/orchestator.cpp
+COPY orchestrator.cpp         ./examples/rpc-embedding/orchestrator.cpp
 COPY src/             ./examples/rpc-embedding/src/
 COPY include/         ./examples/rpc-embedding/include/
 COPY CMakeLists.txt   ./examples/rpc-embedding/CMakeLists.txt
 COPY llama.cpp/CMakeLists.txt ./examples/CMakeLists.txt
 
 RUN cmake -S . -B build -DLLAMA_BUILD_BORINGSSL=ON -DBUILD_SHARED_LIBS=OFF && \
-    cmake --build build -j$(nproc) --config Release -t orchestator && \
-    mv build/bin/orchestator . && \
-    strip -s orchestator
+    cmake --build build -j$(nproc) --config Release -t orchestrator && \
+    mv build/bin/orchestrator . && \
+    strip -s orchestrator
 
 FROM debian:bookworm-slim
 
@@ -59,9 +59,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/llama.cpp/build/bin/llama-server /llama-server
-COPY --from=builder-orchestator /llama.cpp/orchestator .
+COPY --from=builder-orchestrator /llama.cpp/orchestrator .
 COPY rag.db .
 
 EXPOSE 8080
 
-ENTRYPOINT ["./orchestator"]
+ENTRYPOINT ["./orchestrator"]
