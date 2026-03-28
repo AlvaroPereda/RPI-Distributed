@@ -2,6 +2,7 @@
     import { model } from "$lib/stores";
     import { goto } from "$app/navigation";
     import SSHModel from "./SSHModel.svelte";
+    import RAG from "./RAG.svelte";
 
     const startChat = async() => {
         if (!$model) return
@@ -51,6 +52,14 @@
             <p class="section-label">Nodes</p>
             <SSHModel />
         </div>
+        
+        <div class="divider"></div>
+
+        <div class="section">
+            <p class="section-label">Knowledge Base</p>
+            <RAG />
+        </div>
+        
     </div>
 
     <div class="sidebar-footer">
