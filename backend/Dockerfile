@@ -63,7 +63,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=builder              /llama-server-bin  ./llama-server
 COPY --from=builder-orchestrator /orchestrator-bin  ./orchestrator
-COPY rag.db .
+RUN mkdir rag
 
 EXPOSE 8080
 

@@ -10,6 +10,7 @@
 #include "storage.hpp"
 
 const size_t EMBEDDING_DIM = 768;
+static const char* DB_PATH = "rag/rag.db";
 
 struct Resultado {
     int id;
@@ -48,7 +49,7 @@ void insert(sqlite3* db, const std::string &document_name, const int &chunk_inde
 
 std::vector<ChunkRow> get_all_chunks() {
     sqlite3* db;
-    sqlite3_open("rag.db", &db);
+    sqlite3_open(DB_PATH, &db);
 
     sqlite3_stmt* stmt;
     const char* sql = "SELECT document_name, chunk_index, content, embedding FROM document_chunks;";
@@ -77,7 +78,7 @@ std::vector<ChunkRow> get_all_chunks() {
 
 std::vector<std::string> get_documents() {
     sqlite3* db;
-    sqlite3_open("rag.db", &db);
+    sqlite3_open(DB_PATH, &db);
 
     sqlite3_stmt* stmt;
     const char* sql = "SELECT DISTINCT document_name FROM document_chunks ORDER BY document_name;";
@@ -95,7 +96,7 @@ std::vector<std::string> get_documents() {
 
 void delete_document(const std::string& document_name) {
     sqlite3* db;
-    sqlite3_open("rag.db", &db);
+    sqlite3_open(DB_PATH, &db);
 
     sqlite3_stmt* stmt;
     const char* sql = "DELETE FROM document_chunks WHERE document_name = ?;";
@@ -109,7 +110,7 @@ void delete_document(const std::string& document_name) {
 
 void index_document(const std::string &document_name, const std::vector<std::string> &prompts, const std::vector<std::vector<float>> &embeddings) {
     sqlite3* db;
-    sqlite3_open("rag.db", &db);
+    sqlite3_open(DB_PATH, &db);
     init_db(db);
 
     for (size_t i = 0; i < embeddings.size(); ++i) {

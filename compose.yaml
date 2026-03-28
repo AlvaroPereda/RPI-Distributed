@@ -8,6 +8,7 @@ services:
       - "5000:5000"
     volumes:
       - models:/root/.cache/huggingface/hub
+      - rag:/rag
     networks:
       - rpi-network
 
@@ -23,6 +24,8 @@ services:
 volumes:
   models:
     name: llm-models
+  rag:
+    name: rag-db
 
 networks:
   rpi-network:
