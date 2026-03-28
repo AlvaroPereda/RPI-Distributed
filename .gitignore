@@ -1,6 +1,2 @@
 .vscode/
 build/
-backend/*
-!backend/Dockerfile
-!backend/orchestator
-!backend/RAG

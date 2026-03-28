@@ -23,24 +23,31 @@ RUN cmake .. \
 
 RUN strip -s bin/llama-server
 
+
 FROM debian:bookworm-slim AS builder-orchestator
 
 RUN apt-get update && apt-get install -y \
-    g++ \
+    build-essential \
     cmake \
-    pkg-config \
+    git \
+    libsqlite3-dev \
     libssh-dev \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+RUN git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
 
-COPY ./orchestator .
+WORKDIR /llama.cpp
 
-RUN cmake -S . -B build && \
+COPY orchestator.cpp         ./examples/rpc-embedding/orchestator.cpp
+COPY src/             ./examples/rpc-embedding/src/
+COPY include/         ./examples/rpc-embedding/include/
+COPY CMakeLists.txt   ./examples/rpc-embedding/CMakeLists.txt
+COPY llama.cpp/CMakeLists.txt ./examples/CMakeLists.txt
+
+RUN cmake -S . -B build -DLLAMA_BUILD_BORINGSSL=ON -DBUILD_SHARED_LIBS=OFF && \
     cmake --build build -j$(nproc) --config Release -t orchestator && \
-    mv build/orchestator . && \
+    mv build/bin/orchestator . && \
     strip -s orchestator
-
 
 FROM debian:bookworm-slim
 
@@ -48,10 +55,12 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     curl \
     libssh-4 \
+    libsqlite3-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/llama.cpp/build/bin/llama-server /llama-server
-COPY --from=builder-orchestator /app/orchestator .
+COPY --from=builder-orchestator /llama.cpp/orchestator .
+COPY rag.db .
 
 EXPOSE 8080
 

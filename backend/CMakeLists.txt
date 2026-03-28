@@ -1,9 +1,9 @@
-set(TARGET main)
+set(TARGET orchestator)
 
 project(${TARGET} CXX)
 
-add_executable(${TARGET}
-    main.cpp
+add_executable(${TARGET} 
+    orchestator.cpp
     src/rpc-embedding.cpp
     src/storage.cpp
 )
@@ -16,5 +16,7 @@ target_link_libraries(${TARGET} PRIVATE
     llama 
     ${CMAKE_THREAD_LIBS_INIT} 
     sqlite3
+    ssh
 )
 install(TARGETS ${TARGET} RUNTIME)
+
