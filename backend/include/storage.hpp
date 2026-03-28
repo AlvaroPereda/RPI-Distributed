@@ -13,5 +13,7 @@ struct ChunkRow {
 
 void index_document(const std::string &document_name, const std::vector<std::string> &prompts, const std::vector<std::vector<float>> &embeddings);
 std::vector<ChunkRow> get_all_chunks();
+std::vector<std::string> get_documents();
+void delete_document(const std::string& document_name);
 
 #endif

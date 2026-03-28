@@ -10,6 +10,7 @@
 #include <nlohmann/json.hpp>
 #include <cpp-httplib/httplib.h>
 #include "rpc-embedding.hpp"
+#include "storage.hpp"
 
 using json = nlohmann::json;
 
@@ -179,6 +180,12 @@ int main() {
         res.set_content("ok", "text/plain");
     });
 
+    svr.Get("/documents", [](const httplib::Request& req, httplib::Response& res) {
+        std::vector<std::string> documents = get_documents();
+        json response = documents;
+        res.set_content(response.dump(), "application/json");
+    });
+
     svr.Post("/reload", [](const httplib::Request& req, httplib::Response& res) {
         try
         {
@@ -341,6 +348,31 @@ int main() {
             res.status = 400;
             res.set_content("Missing file", "text/plain");
         }
+    });
+
+    svr.Delete("/document", [](const httplib::Request& req, httplib::Response& res) {
+        std::cout << "Received request to delete document" << std::endl;
+        try
+        {
+            auto body = json::parse(req.body);
+
+            if (body.contains("document_name")) {
+                std::string document_name = body["document_name"];
+                delete_document(document_name);
+                res.status = 200;
+                res.set_content("ok", "text/plain");
+            }
+            else {
+                res.status = 400;
+                res.set_content("{\"error\": \"The document_name attribute is missing\"}", "application/json");
+            }
+        }
+        catch(...)
+        {
+            res.status = 400;
+            res.set_content("{\"error\": \"Invalid JSON\"}", "application/json");
+        }
+        
     });
 
     std::cout << "Starting server on port 5000..." << std::endl;

@@ -75,6 +75,38 @@ std::vector<ChunkRow> get_all_chunks() {
     return chunks;
 }
 
+std::vector<std::string> get_documents() {
+    sqlite3* db;
+    sqlite3_open("rag.db", &db);
+
+    sqlite3_stmt* stmt;
+    const char* sql = "SELECT DISTINCT document_name FROM document_chunks ORDER BY document_name;";
+    std::vector<std::string> documents;
+
+    sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW)
+        documents.push_back(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+    
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    return documents;
+}
+
+void delete_document(const std::string& document_name) {
+    sqlite3* db;
+    sqlite3_open("rag.db", &db);
+
+    sqlite3_stmt* stmt;
+    const char* sql = "DELETE FROM document_chunks WHERE document_name = ?;";
+
+    sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
+    sqlite3_bind_text(stmt, 1, document_name.c_str(), -1, SQLITE_STATIC); // Se evita inyeccion SQL 
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+}
+
 void index_document(const std::string &document_name, const std::vector<std::string> &prompts, const std::vector<std::vector<float>> &embeddings) {
     sqlite3* db;
     sqlite3_open("rag.db", &db);
