@@ -259,7 +259,7 @@ int main() {
 
                 std::string context = "";
                 if (use_rag) {
-                    RagResult rag_result = generate_embeddings(prompt)[0];
+                    RetrievedChunk rag_result = generate_embeddings(prompt)[0];
                     context = rag_result.content;
                 }
 

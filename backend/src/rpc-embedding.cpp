@@ -499,30 +499,16 @@ std::vector<std::vector<float>> generate(std::vector<std::string> prompts) {
     return results;
 }
 
-std::vector<RagResult> generate_embeddings(const std::string &prompt) {
+std::vector<RetrievedChunk> generate_embeddings(const std::string &prompt) {
     std::vector<float> embeddings = generate({ prompt })[0];
 
-    std::vector<ChunkRow> chunks = get_all_chunks();
+    std::vector<RetrievedChunk> results = search_similar(embeddings);
 
-    ChunkRow best_chunk;
-    float best_sim = 0.35f;
-    std::vector<RagResult> scored;
-
-    for (size_t i = 0; i < chunks.size(); ++i) {
-        float sim = cosine_similarity(embeddings.data(), chunks[i].embedding.data(), embeddings.size());
-        scored.push_back({chunks[i].document_name, chunks[i].content, sim});
+    for (const auto& result : results) {
+        LOG_INF("Document: %s, Chunk: %d, Distance: %f\n", result.document_name.c_str(), result.chunk_index, result.distance);
     }
 
-    std::sort(scored.begin(), scored.end(),
-    [](const RagResult& a, const RagResult& b) {
-        return a.score > b.score;
-    });
-
-    for (size_t i = 0; i < std::min<size_t>(3, scored.size()); ++i) {
-        LOG("Chunk: %s\nSimilarity: %.4f\n\n", scored[i].content.c_str(), scored[i].score);
-    }
-
-    return scored;
+    return results;
 }
 
 void generate_embeddings(const std::string &filename, const std::string &prompt) {

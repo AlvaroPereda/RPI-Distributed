@@ -4,16 +4,16 @@
 #include <vector>
 #include <string>
 
-struct ChunkRow {
+struct RetrievedChunk {
     std::string document_name;
     int chunk_index;
     std::string content;
-    std::vector<float> embedding;
+    double distance;
 };
 
 void index_document(const std::string &document_name, const std::vector<std::string> &prompts, const std::vector<std::vector<float>> &embeddings);
-std::vector<ChunkRow> get_all_chunks();
 std::vector<std::string> get_documents();
 void delete_document(const std::string& document_name);
+std::vector<RetrievedChunk> search_similar(const std::vector<float>& query);
 
 #endif
