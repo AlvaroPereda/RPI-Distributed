@@ -22,10 +22,8 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    messages: message,
-                    model: "model.gguf",
-                    temperature: 0.7,
-                    stream: true // Va pasando información cuando la tiene no espera a que este toda la respuesa completa
+                    prompt: prompt,
+                    use_rag: true
                 })
             })
             if (response.status !== 200) throw new Error("Error en la respuesta del servidor.")
@@ -82,8 +80,15 @@
     }
 
 </script>
-<main>
+<main class="chat-page">
     <Header />
     <Chat {history} />
     <Input {handleNewPrompt} />
 </main>
+
+<style>
+    .chat-page {
+        background-color: var(--bg-deep);
+        min-height: 100vh;
+    }
+</style>
