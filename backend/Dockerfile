@@ -48,6 +48,7 @@ RUN --mount=type=cache,id=orchestrator-build-${TARGETPLATFORM},target=/build \
     cmake -S /llama.cpp -B /build \
         -DLLAMA_BUILD_BORINGSSL=ON \
         -DBUILD_SHARED_LIBS=OFF \
+        -DGGML_NATIVE=OFF \
     && cmake --build /build -j$(nproc) --config Release -t orchestrator \
     && cp /build/bin/orchestrator /orchestrator-bin \
     && strip -s /orchestrator-bin
