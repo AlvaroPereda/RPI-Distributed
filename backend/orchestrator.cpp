@@ -258,25 +258,24 @@ int main() {
                 bool use_rag = body.value("use_rag", false);
 
                 std::string context = "";
+
                 if (use_rag) {
-                    RetrievedChunk rag_result = generate_embeddings(prompt)[0];
-                    context = rag_result.content;
+                    std::vector<RetrievedChunk> rag_result = generate_embeddings(prompt);
+                    for (const RetrievedChunk& chunk : rag_result)
+                        context += chunk.content + "\n\n";
                 }
 
-                std::string enriched_prompt = prompt;
+                std::cout << "Received context: " << context << std::endl;
+
+                json messages = json::array();
+
                 if (!context.empty()) {
-                    enriched_prompt = "Contexto relevante:\n" + context + "\n\n---\nPregunta: " + prompt;
+                    messages.push_back({{"role", "system"}, {"content", "Usa el siguiente contexto para responder:\n\n" + context}});
                 }
-
-                std::cout << "Received context: " << enriched_prompt << std::endl;
+                messages.push_back({{"role", "user"}, {"content", prompt}});
 
                 json llama_body = {
-                    {"messages", {
-                        {
-                            {"role", "user"},
-                            {"content", enriched_prompt}
-                        }
-                    }},
+                    {"messages", messages},
                     {"temperature", 0.7},
                     {"stream", true}
                 };
