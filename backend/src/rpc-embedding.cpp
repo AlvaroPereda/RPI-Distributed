@@ -65,14 +65,6 @@ static std::vector<std::string> split_chunks(std::string_view text, size_t chunk
     return chunks;
 }
 
-float cosine_similarity(const float* vecA, const float* vecB, int size) {
-    float dot = 0.0f;
-    for (int i = 0; i < size; ++i) {
-        dot += vecA[i] * vecB[i];
-    }
-    return dot;
-}
-
 static std::vector<std::string> split_lines(const std::string & s, const std::string & separator = "\n") {
     std::vector<std::string> lines;
     size_t start = 0;

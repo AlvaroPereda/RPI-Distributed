@@ -18,7 +18,7 @@ pid_t llama_pid = -1;
 std::vector<std::string> rpc_devices;
 std::string model = "ggml-org/gemma-3-1b-it-GGUF"; // Modelo por defecto
 
-void stop_background_llama() {
+static void stop_background_llama() {
     if(llama_pid != -1) {
         std::cout << "Stopping background process with PID: " << llama_pid << std::endl;
         kill(llama_pid, SIGTERM);
@@ -31,7 +31,7 @@ void stop_background_llama() {
 }
 
 
-void start_background_llama() {
+static void start_background_llama() {
 
     stop_background_llama();
 
@@ -70,7 +70,7 @@ void start_background_llama() {
     }
 }
 
-std::string connect_ssh(std::string ip, std::string user, std::string password) {
+static std::string connect_ssh(std::string ip, std::string user, std::string password) {
     ssh_session session;
     ssh_channel channel;
     int rc;
@@ -142,7 +142,7 @@ std::string connect_ssh(std::string ip, std::string user, std::string password) 
     return "";
 }
 
-bool wait_for_server_ready() {
+static bool wait_for_server_ready() {
     httplib::Client cli("localhost", 8080);
     cli.set_connection_timeout(0, 500000); // 0.5 segundos timeout conexión
 
@@ -175,12 +175,12 @@ bool wait_for_server_ready() {
 int main() {
     httplib::Server svr;
 
-    svr.Get("/health", [](const httplib::Request& req, httplib::Response& res) {
+    svr.Get("/health", [](const httplib::Request&, httplib::Response& res) {
         res.status = 200;
         res.set_content("ok", "text/plain");
     });
 
-    svr.Get("/documents", [](const httplib::Request& req, httplib::Response& res) {
+    svr.Get("/documents", [](const httplib::Request&, httplib::Response& res) {
         std::vector<std::string> documents = get_documents();
         json response = documents;
         res.set_content(response.dump(), "application/json");
