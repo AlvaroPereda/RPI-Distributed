@@ -1,10 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <cmath>
-#include <algorithm>
-#include <cstring> // Para memcpy
-#include <fstream>
-#include <sstream>
 
 #include "storage.hpp"
 
@@ -56,7 +51,7 @@ void Storage::init_schema() {
     }
 }
 
-void Storage::insert_chunk(const std::string &document_name, const int &chunk_index, const std::string &content, const std::vector<float> &embedding) {
+void Storage::insert_chunk(const std::string& document_name, const int chunk_index, const std::string& content, const std::vector<float>& embedding) {
     sqlite3_stmt* stmt;
 
     const char* sql_metadata = "INSERT INTO document_chunks (document_name, chunk_index, content) VALUES (?, ?, ?);";
@@ -79,7 +74,7 @@ void Storage::insert_chunk(const std::string &document_name, const int &chunk_in
     sqlite3_finalize(stmt);
 }
 
-void Storage::index_document(const std::string &document_name, const std::vector<std::string> &prompts, const std::vector<std::vector<float>> &embeddings) {
+void Storage::index_document(const std::string& document_name, const std::vector<std::string>& prompts, const std::vector<std::vector<float>>& embeddings) {
     for (size_t i = 0; i < embeddings.size(); ++i) {
         std::cout << "Indexando chunk " << i << " del documento " << document_name << std::endl;
         insert_chunk(document_name, i, prompts[i], embeddings[i]);
@@ -88,15 +83,20 @@ void Storage::index_document(const std::string &document_name, const std::vector
 
 void Storage::delete_document(const std::string& document_name) {
     sqlite3_stmt* stmt;
-    const char* sql = "DELETE FROM document_chunks WHERE document_name = ?;";
 
-    sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
+    const char* sql_vec = "DELETE FROM document_chunks_vec WHERE rowid IN (SELECT id FROM document_chunks WHERE document_name = ?);";
+    sqlite3_prepare_v2(db, sql_vec, -1, &stmt, nullptr);
+    sqlite3_bind_text(stmt, 1, document_name.c_str(), -1, SQLITE_STATIC);
+    sqlite3_step(stmt);
+
+    const char* sql_metadata = "DELETE FROM document_chunks WHERE document_name = ?;";
+    sqlite3_prepare_v2(db, sql_metadata, -1, &stmt, 0);
     sqlite3_bind_text(stmt, 1, document_name.c_str(), -1, SQLITE_STATIC); // Se evita inyeccion SQL 
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
 }
 
-std::vector<RetrievedChunk> Storage::search_similar(const std::vector<float> &query)
+std::vector<RetrievedChunk> Storage::search_similar(const std::vector<float>& query)
 {
     sqlite3_stmt* stmt;
     const char* sql =
