@@ -16,6 +16,7 @@
 
 constexpr size_t CHUNK_SIZE = 500;
 constexpr size_t OVERLAP = 50;
+constexpr size_t MIN_CHUNK_SIZE = 150;
 
 static std::string normalize_line_endings(std::string_view text_in) {
     std::string normalized;
@@ -56,7 +57,8 @@ static size_t get_chunk_end(size_t& start, size_t end, size_t textLen, std::stri
     else {
         for (size_t i = start; i < end; i++) {
             if (text[i] == '\n' && i + 1 < end && text[i + 1] == '\n') {
-                last_paragraph = i;
+                if (i - start >= MIN_CHUNK_SIZE)
+                    last_paragraph = i;
             } else if ((text[i] == '.' || text[i] == '!' || text[i] == '?')
                     && i + 1 < end && text[i + 1] == ' ') {
                 last_sentence = i + 1;

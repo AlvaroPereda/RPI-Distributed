@@ -15,7 +15,7 @@ extern "C" {
 }
 
 const size_t EMBEDDING_DIM = 768;
-const size_t TOP_K = 2;
+const size_t TOP_K = 3;
 static const char* DB_PATH = "rag/rag.db";
 
 struct Resultado {
