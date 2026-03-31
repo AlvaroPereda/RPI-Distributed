@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <sqlite3.h>
 #include <cmath>
 #include <algorithm>
 #include <cstring> // Para memcpy
@@ -18,15 +17,22 @@ const size_t EMBEDDING_DIM = 768;
 const size_t TOP_K = 3;
 static const char* DB_PATH = "rag/rag.db";
 
-struct Resultado {
-    int id;
-    std::string texto;
-    float score;
-};
+Storage::Storage() {
+    sqlite3_auto_extension((void(*)(void))sqlite3_vec_init);
+    if (sqlite3_open(DB_PATH, &db) != SQLITE_OK) {
+        std::cerr << "Error opening database: " << sqlite3_errmsg(db) << std::endl;
+        db = nullptr;
+    } else
+        init_schema();
+}
 
-static void init_db(sqlite3* db) {
+Storage::~Storage() {
+    if (db)
+        sqlite3_close(db);
+}
+
+void Storage::init_schema() {
     char* errMsg = nullptr;
-
     const char* sql_metadata = 
         "CREATE TABLE IF NOT EXISTS document_chunks ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -50,7 +56,7 @@ static void init_db(sqlite3* db) {
     }
 }
 
-static void insert(sqlite3* db, const std::string &document_name, const int &chunk_index, const std::string &content, const std::vector<float> &embedding) {
+void Storage::insert_chunk(const std::string &document_name, const int &chunk_index, const std::string &content, const std::vector<float> &embedding) {
     sqlite3_stmt* stmt;
 
     const char* sql_metadata = "INSERT INTO document_chunks (document_name, chunk_index, content) VALUES (?, ?, ?);";
@@ -73,11 +79,25 @@ static void insert(sqlite3* db, const std::string &document_name, const int &chu
     sqlite3_finalize(stmt);
 }
 
-std::vector<RetrievedChunk> search_similar(const std::vector<float>& query) {
-    sqlite3* db;
-    sqlite3_auto_extension((void(*)(void))sqlite3_vec_init);
-    sqlite3_open(DB_PATH, &db);
+void Storage::index_document(const std::string &document_name, const std::vector<std::string> &prompts, const std::vector<std::vector<float>> &embeddings) {
+    for (size_t i = 0; i < embeddings.size(); ++i) {
+        std::cout << "Indexando chunk " << i << " del documento " << document_name << std::endl;
+        insert_chunk(document_name, i, prompts[i], embeddings[i]);
+    }
+}
 
+void Storage::delete_document(const std::string& document_name) {
+    sqlite3_stmt* stmt;
+    const char* sql = "DELETE FROM document_chunks WHERE document_name = ?;";
+
+    sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
+    sqlite3_bind_text(stmt, 1, document_name.c_str(), -1, SQLITE_STATIC); // Se evita inyeccion SQL 
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+}
+
+std::vector<RetrievedChunk> Storage::search_similar(const std::vector<float> &query)
+{
     sqlite3_stmt* stmt;
     const char* sql =
         "SELECT c.document_name, c.chunk_index, c.content, v.distance "
@@ -103,14 +123,11 @@ std::vector<RetrievedChunk> search_similar(const std::vector<float>& query) {
     }
 
     sqlite3_finalize(stmt);
-    sqlite3_close(db);
     return results;
 }
 
-std::vector<std::string> get_documents() {
-    sqlite3* db;
-    sqlite3_open(DB_PATH, &db);
-
+std::vector<std::string> Storage::get_documents()
+{
     sqlite3_stmt* stmt;
     const char* sql = "SELECT DISTINCT document_name FROM document_chunks ORDER BY document_name;";
     std::vector<std::string> documents;
@@ -121,36 +138,5 @@ std::vector<std::string> get_documents() {
         documents.push_back(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
     
     sqlite3_finalize(stmt);
-    sqlite3_close(db);
     return documents;
-}
-
-void delete_document(const std::string& document_name) {
-    sqlite3* db;
-    sqlite3_open(DB_PATH, &db);
-
-    sqlite3_stmt* stmt;
-    const char* sql = "DELETE FROM document_chunks WHERE document_name = ?;";
-
-    sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
-    sqlite3_bind_text(stmt, 1, document_name.c_str(), -1, SQLITE_STATIC); // Se evita inyeccion SQL 
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
-    sqlite3_close(db);
-}
-
-void index_document(const std::string &document_name, const std::vector<std::string> &prompts, const std::vector<std::vector<float>> &embeddings) {
-    sqlite3* db;
-
-    sqlite3_auto_extension((void(*)(void))sqlite3_vec_init);
-
-    sqlite3_open(DB_PATH, &db);
-    init_db(db);
-
-    for (size_t i = 0; i < embeddings.size(); ++i) {
-        std::cout << "Indexando chunk " << i << " del documento " << document_name << std::endl;
-        insert(db, document_name, i, prompts[i], embeddings[i]);
-    }
-    
-    sqlite3_close(db);
 }

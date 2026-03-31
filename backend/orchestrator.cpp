@@ -174,14 +174,15 @@ static bool wait_for_server_ready() {
 
 int main() {
     httplib::Server svr;
+    Storage rag_storage;
 
     svr.Get("/health", [](const httplib::Request&, httplib::Response& res) {
         res.status = 200;
         res.set_content("ok", "text/plain");
     });
 
-    svr.Get("/documents", [](const httplib::Request&, httplib::Response& res) {
-        std::vector<std::string> documents = get_documents();
+    svr.Get("/documents", [&rag_storage](const httplib::Request&, httplib::Response& res) {
+        std::vector<std::string> documents = rag_storage.get_documents();
         json response = documents;
         res.set_content(response.dump(), "application/json");
     });
@@ -249,7 +250,7 @@ int main() {
         }
     });
 
-    svr.Post("/chat/completions", [](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/chat/completions", [&rag_storage](const httplib::Request& req, httplib::Response& res) {
         try
         {
             auto body = json::parse(req.body);
@@ -260,7 +261,7 @@ int main() {
                 std::string context = "";
 
                 if (use_rag) {
-                    std::vector<RetrievedChunk> rag_result = generate_embeddings(prompt);
+                    std::vector<RetrievedChunk> rag_result = generate_embeddings(rag_storage, prompt);
                     for (const RetrievedChunk& chunk : rag_result)
                         context += chunk.content + "\n\n";
                 }
@@ -333,13 +334,13 @@ int main() {
 
     });
 
-    svr.Post("/document", [](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/document", [&rag_storage](const httplib::Request& req, httplib::Response& res) {
         if (req.form.has_file("file")) {
             httplib::FormData file = req.form.get_file("file");
             std::cout << "File name: " << file.filename << std::endl;
             std::cout << "File size: " << file.content.size() << std::endl;
 
-            generate_embeddings(file.filename, file.content);
+            generate_embeddings(rag_storage, file.filename, file.content);
 
             res.set_content("File received", "text/plain");
 
@@ -349,7 +350,7 @@ int main() {
         }
     });
 
-    svr.Delete("/document", [](const httplib::Request& req, httplib::Response& res) {
+    svr.Delete("/document", [&rag_storage](const httplib::Request& req, httplib::Response& res) {
         std::cout << "Received request to delete document" << std::endl;
         try
         {
@@ -357,7 +358,7 @@ int main() {
 
             if (body.contains("document_name")) {
                 std::string document_name = body["document_name"];
-                delete_document(document_name);
+                rag_storage.delete_document(document_name);
                 res.status = 200;
                 res.set_content("ok", "text/plain");
             }

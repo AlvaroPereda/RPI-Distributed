@@ -5,7 +5,7 @@
 #include <vector>
 #include "storage.hpp"
 
-std::vector<RetrievedChunk> generate_embeddings(const std::string &prompt);
-void generate_embeddings(const std::string &filename, const std::string &prompt);
+std::vector<RetrievedChunk> generate_embeddings(Storage& storage, const std::string &prompt);
+void generate_embeddings(Storage& storage, const std::string &filename, const std::string &prompt);
 
 #endif

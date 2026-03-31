@@ -541,10 +541,10 @@ static std::vector<std::vector<float>> generate(std::vector<std::string> prompts
     return results;
 }
 
-std::vector<RetrievedChunk> generate_embeddings(const std::string &prompt) {
+std::vector<RetrievedChunk> generate_embeddings(Storage& storage, const std::string &prompt) {
     std::vector<float> embeddings = generate({ prompt })[0];
 
-    std::vector<RetrievedChunk> results = search_similar(embeddings);
+    std::vector<RetrievedChunk> results = storage.search_similar(embeddings);
 
     for (const auto& result : results) {
         LOG_INF("Document: %s, Chunk: %d, Distance: %f\n", result.document_name.c_str(), result.chunk_index, result.distance);
@@ -553,10 +553,10 @@ std::vector<RetrievedChunk> generate_embeddings(const std::string &prompt) {
     return results;
 }
 
-void generate_embeddings(const std::string &filename, const std::string &prompt) {
+void generate_embeddings(Storage& storage, const std::string &filename, const std::string &prompt) {
     std::vector<std::string> prompts = split_chunks(prompt, CHUNK_SIZE, OVERLAP);
 
     std::vector<std::vector<float>> embeddings = generate(prompts);
 
-    index_document(filename, prompts, embeddings);
+    storage.index_document(filename, prompts, embeddings);
 }
