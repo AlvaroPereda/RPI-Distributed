@@ -14,14 +14,90 @@
 #pragma warning(disable: 4244 4267) // possible loss of data
 #endif
 
-
 constexpr size_t CHUNK_SIZE = 500;
 constexpr size_t OVERLAP = 50;
 
-static std::vector<std::string> split_chunks(std::string_view text, size_t chunkSize, size_t overlap) {
+static std::string normalize_line_endings(std::string_view text_in) {
+    std::string normalized;
+    normalized.reserve(text_in.size());
+    for (size_t i = 0; i < text_in.size(); i++) {
+        if (text_in[i] == '\r' && i + 1 < text_in.size() && text_in[i + 1] == '\n') {
+            continue;
+        }
+        normalized += text_in[i];
+    }
+    return normalized;
+}
+
+static size_t get_chunk_start(size_t start, size_t overlap, std::string_view text) {
+    if (start <= overlap)
+        return 0;
+
+    size_t cut_overlap = start - overlap;
+
+    for (size_t i = cut_overlap; i < start; i++) {
+            if (text[i] == ' ') {
+                return i + 1;
+            }
+        }
+    return start;
+}
+
+static size_t get_chunk_end(size_t& start, size_t end, size_t textLen, std::string_view text) {
+    int last_paragraph = -1;
+    int last_sentence = -1;
+    int last_clause = -1;
+    int last_word = -1;
+
+    if (end >= textLen) {
+        start = textLen;
+        return textLen;
+    }
+    else {
+        for (size_t i = start; i < end; i++) {
+            if (text[i] == '\n' && i + 1 < end && text[i + 1] == '\n') {
+                last_paragraph = i;
+            } else if ((text[i] == '.' || text[i] == '!' || text[i] == '?')
+                    && i + 1 < end && text[i + 1] == ' ') {
+                last_sentence = i + 1;
+            } else if ((text[i] == ',' || text[i] == ';' || text[i] == ':')
+                    && i + 1 < end && text[i + 1] == ' ') {
+                last_clause = i + 1;
+            } else if (text[i] == ' ') {
+                last_word = i;
+            }
+        }
+    }
+
+    if (last_paragraph != -1) {
+        start = last_paragraph + 2;
+        return last_paragraph;
+    }
+    else if (last_sentence != -1) {
+        start = last_sentence + 1;
+        return last_sentence;
+    }
+    else if (last_clause != -1) {
+        start = last_clause + 1;
+        return last_clause;
+    }
+    else if (last_word != -1) {
+        start = last_word + 1;
+        return last_word;
+    }
+    else {
+        start = end;
+        return end;
+    }
+}    
+
+static std::vector<std::string> split_chunks(std::string_view text_in, size_t chunkSize, size_t overlap) {
     std::vector<std::string> chunks;
 
-    if(text.empty()) return chunks;
+    if(text_in.empty()) return chunks;
+
+    std::string normalized = normalize_line_endings(text_in);
+    std::string_view text = normalized;
 
     size_t start = 0;
     size_t textLen = text.length();
@@ -29,39 +105,11 @@ static std::vector<std::string> split_chunks(std::string_view text, size_t chunk
     while (start < textLen) {
         size_t end = start + chunkSize;
 
-        if (end >= textLen)
-            end = textLen;
-        else {
-            // Se retrocede el end en busca de un espacio para no cortar las palabras en medio
-            while (end > start && text[end] != ' ' && text[end] != '\n') {
-                end--;
-            }
-            
-            // Si hemos retocedido tanto que estamos en el principio volvemos a asignar en tamaño del chunk para evitar errores
-            if (end == start) 
-                end = start + chunkSize;
-        }
-        chunks.emplace_back(text.substr(start, end - start));
-
-        if (end == textLen) break;
-
-        if (end > overlap) {
-            start = end - overlap;
-
-            // Se añaden caracteres hasta encontrar el espacio vacio
-            while (start < end && text[start] != ' ' && text[start] != '\n') {
-                start++;
-            }
-            
-            // Se salta el espació en blanco para que el chunk comience con una letra
-            if (start < textLen && (text[start] == ' ' || text[start] == '\n'))
-                start++;
-
-        } else {
-            // Si el chunk es muy pequeño no hace falta que hagamos el overlab
-            start = end;
-        }
+        size_t chunk_start = get_chunk_start(start, overlap, text);
+        size_t chunk_end = get_chunk_end(start, end, textLen, text);
+        chunks.emplace_back(text.substr(chunk_start, chunk_end - chunk_start));
     }
+
     return chunks;
 }
 
@@ -155,7 +203,7 @@ static void print_raw_embeddings(const float * emb,
     }
 }
 
-std::vector<std::vector<float>> generate(std::vector<std::string> prompts) {
+static std::vector<std::vector<float>> generate(std::vector<std::string> prompts) {
     common_params params;
 
     std::vector<std::string> args = {
