@@ -39,25 +39,25 @@ static void start_background_llama() {
 
     if (pid == 0) {
         // Proceso hijo
-        std::vector<char*> args;
-        args.push_back((char*)"./llama-server");
-        args.push_back((char*)"-hf");
-        args.push_back((char*)model.c_str());
-        args.push_back((char*)"-c");
-        args.push_back((char*)"2048");
-        if (rpc_devices.size() > 0) {
-            args.push_back((char*)"--rpc");
-            for (int i = 0; i < rpc_devices.size(); i++) {
-                args.push_back((char*)rpc_devices[i].c_str());
+        std::vector<const char*> args;
+        args.push_back("./llama-server");
+        args.push_back("-hf");
+        args.push_back(model.c_str());
+        args.push_back("-c");
+        args.push_back("2048");
+        if (!rpc_devices.empty()) {
+            args.push_back("--rpc");
+            for (const auto& device : rpc_devices) {
+                args.push_back(device.c_str());
             }
         }
-        args.push_back((char*)"--host");
-        args.push_back((char*)"0.0.0.0");
-        args.push_back((char*)"--port");
-        args.push_back((char*)"8080");
-        args.push_back(NULL);
+        args.push_back("--host");
+        args.push_back("0.0.0.0");
+        args.push_back("--port");
+        args.push_back("8080");
+        args.push_back(nullptr);
 
-        execvp(args[0], args.data());
+        execvp(args[0], const_cast<char* const*>(args.data()));
 
         perror("execvp failed");
         exit(1);
