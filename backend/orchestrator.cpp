@@ -11,6 +11,7 @@
 #include <cpp-httplib/httplib.h>
 #include "rpc-embedding.hpp"
 #include "storage.hpp"
+#include "ssh-manager.hpp"
 
 using json = nlohmann::json;
 
@@ -68,78 +69,6 @@ static void start_background_llama() {
     } else {
         perror("Fork failed");
     }
-}
-
-static std::string connect_ssh(std::string ip, std::string user, std::string password) {
-    ssh_session session;
-    ssh_channel channel;
-    int rc;
-    char buffer[256];
-    int nbytes;
-    // --- CONFIGURACIÓN ---
-    const char* rpi_ip = ip.c_str();
-    const char* rpi_user = user.c_str();
-    const char* rpi_pass = password.c_str();
-    // Comando que hay que mejorar metiendo un .sh y que haga ahí todas las comprobaciones 
-    /*const char* comando = "sh -c 'if [ $(id -u) -eq 0 ] || groups | grep -q docker; "
-                        "then CMD=\"docker\"; else CMD=\"sudo docker\"; fi; "
-                        "$CMD run -d --rm -p 50051:50051 --name llama-worker llama-worker";
-    */
-
-    const char* comando = "sudo docker run -d --rm -p 50051:50051 --name llama-worker alvaropereda/llama-worker";
-    // 1. Iniciar sesión
-    session = ssh_new();
-    if (session == NULL) return "Error configuring ssh";
-
-    ssh_options_set(session, SSH_OPTIONS_HOST, rpi_ip);
-    ssh_options_set(session, SSH_OPTIONS_USER, rpi_user);
-
-    // Desactivar chequeo estricto de llaves (Solo para pruebas)
-    int strict_check = 0;
-    ssh_options_set(session, SSH_OPTIONS_STRICTHOSTKEYCHECK, &strict_check);
-
-    // 2. Conectar
-    std::cout << "Connecting to " << rpi_ip << "..." << std::endl;
-    rc = ssh_connect(session);
-    if (rc != SSH_OK) {
-        std::cerr << "Error with the connection: " << ssh_get_error(session) << std::endl;
-        ssh_free(session);
-        return "SSH connection could not be established to the remote host";
-    }
-
-    // 3. Autenticar (Password)
-    std::cout << "Authenticating..." << std::endl;
-    rc = ssh_userauth_password(session, NULL, rpi_pass);
-    if (rc != SSH_AUTH_SUCCESS) {
-        std::cerr << "Error with the authentication: " << ssh_get_error(session) << std::endl;
-        ssh_disconnect(session);
-        ssh_free(session);
-        return "Invalid username or password for the provided user account";
-    }
-
-    // 4. Ejecutar comando
-    std::cout << "Running: " << comando << std::endl;
-    channel = ssh_channel_new(session);
-    rc = ssh_channel_open_session(channel);
-    rc = ssh_channel_request_exec(channel, comando);
-
-    // 5. Leer respuesta
-    while ((nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0)) > 0) {
-        if (fwrite(buffer, 1, nbytes, stdout) != (size_t)nbytes) {
-            ssh_channel_close(channel);
-            ssh_channel_free(channel);
-            return "Error while retrieving command output from remote host";
-        }
-    }
-
-    // 6. Limpieza
-    ssh_channel_send_eof(channel);
-    ssh_channel_close(channel);
-    ssh_channel_free(channel);
-    ssh_disconnect(session);
-    ssh_free(session);
-
-    return "";
 }
 
 static bool wait_for_server_ready() {
@@ -227,26 +156,24 @@ int main() {
                 std::string ip = body["ip"];
                 std::string user = body["user"];
                 std::string password = body["password"];
-                std::string message = connect_ssh(ip, user, password);
+                connect_device_ssh(ip.c_str(), user.c_str(), password.c_str());
                 std::string ip_with_port = body["ip"].get<std::string>() + ":50051";
 
-                if (message != "") {
-                res.status = 400;
-                res.set_content(json({{"error", message}}).dump(), "application/json");
-                } else {
-                    rpc_devices.push_back(ip_with_port);
-                    res.status = 200;
-                    res.set_content("ok", "text/plain");
-                }
+                rpc_devices.push_back(ip_with_port);
+                res.status = 200;
+                res.set_content("ok", "text/plain");
             } else {
                 res.status = 400;
                 res.set_content("{\"error\": \"The device attribute is missing\"}", "application/json");
             }
         }
-        catch(...)
-        {
+        catch(const std::runtime_error& e) {
             res.status = 400;
-            res.set_content("{\"error\": \"Invalid JSON\"}", "application/json");
+            res.set_content(json({{"error", e.what()}}).dump(), "application/json");
+        }
+        catch(...) {
+            res.status = 500;
+            res.set_content(json({{"error", "An unexpected error occurred on the server"}}).dump(), "application/json");
         }
     });
 

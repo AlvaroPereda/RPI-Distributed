@@ -12,6 +12,7 @@ set(SOURCES
     src/rpc-embedding.cpp
     src/storage.cpp
     src/sqlite-vec.c
+    src/ssh-manager.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})

@@ -24,14 +24,17 @@
                 })
             })
 
-            if(!response.ok) throw new Error("Error en la respuesta del servidor.")
+            if(!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error)
+            }
 
             deviceState.setConnection({...device})
             device = {user: "", ip: "", password: ""}
 
             isOpen = false;
         } catch (e) {
-            errorMessage = e instanceof Error ? e.message : "Error desconocido"
+            errorMessage = e instanceof Error ? e.message : "An unexpected error occurred on the server"
         }
     }
 </script>
