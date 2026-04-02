@@ -223,7 +223,7 @@ int main() {
         {
             auto body = json::parse(req.body);
             
-            if (body.contains("ip") || body.contains("user") || body.contains("password")) {
+            if (body.contains("ip") && body.contains("user") && body.contains("password")) {
                 std::string ip = body["ip"];
                 std::string user = body["user"];
                 std::string password = body["password"];
