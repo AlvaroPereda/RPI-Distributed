@@ -1,7 +1,9 @@
+#include "ssh-manager.hpp"
+
 #include <iostream>
+
 #include <libssh/libssh.h>
 
-#include "ssh-manager.hpp"
 class SSH_manager {
     private:
         ssh_session session = nullptr;

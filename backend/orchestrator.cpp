@@ -1,122 +1,25 @@
 #include <iostream>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <signal.h>
-#include <libssh/libssh.h>
-#include <stdlib.h>
-#include <stdio.h>
-
 #include <nlohmann/json.hpp>
 #include <cpp-httplib/httplib.h>
+
 #include "rpc-embedding.hpp"
 #include "storage.hpp"
 #include "ssh-manager.hpp"
+#include "llama-manager.hpp"
 
 using json = nlohmann::json;
-
-pid_t llama_pid = -1;
-std::vector<std::string> rpc_devices;
-std::string model = "ggml-org/gemma-3-1b-it-GGUF"; // Modelo por defecto
-
-static void stop_background_llama() {
-    if(llama_pid != -1) {
-        std::cout << "Stopping background process with PID: " << llama_pid << std::endl;
-        kill(llama_pid, SIGTERM);
-
-        // Esperar a que el proceso hijo termine
-        int status;
-        waitpid(llama_pid, &status, 0);
-        llama_pid = -1;
-    }
-}
-
-
-static void start_background_llama() {
-
-    stop_background_llama();
-
-    pid_t pid = fork();
-
-    if (pid == 0) {
-        // Proceso hijo
-        std::vector<const char*> args;
-        args.push_back("./llama-server");
-        args.push_back("-hf");
-        args.push_back(model.c_str());
-        args.push_back("-c");
-        args.push_back("2048");
-        if (!rpc_devices.empty()) {
-            args.push_back("--rpc");
-            for (const auto& device : rpc_devices) {
-                args.push_back(device.c_str());
-            }
-        }
-        args.push_back("--host");
-        args.push_back("0.0.0.0");
-        args.push_back("--port");
-        args.push_back("8080");
-        args.push_back(nullptr);
-
-        execvp(args[0], const_cast<char* const*>(args.data()));
-
-        perror("execvp failed");
-        exit(1);
-    } else if (pid > 0) {
-        // Proceso padre 
-        llama_pid = pid;
-        std::cout << "New process started with PID: " << pid << std::endl;
-    } else {
-        perror("Fork failed");
-    }
-}
-
-static bool wait_for_server_ready() {
-    httplib::Client cli("localhost", 8080);
-    cli.set_connection_timeout(0, 500000); // 0.5 segundos timeout conexión
-
-    int max_retries = 1200; // Son 10 minutos
-
-    for (int i = 0; i < max_retries; i++) {
-        int status;
-        pid_t result = waitpid(llama_pid, &status, WNOHANG);
-        if (result == llama_pid) {
-            std::cerr << "Error: llama-server process terminated unexpectedly." << std::endl;
-            return false;
-        }
-
-        if (auto res = cli.Get("/health")) {
-            if (res->status == 200) {
-                std::cout << "Server is UP and Ready!" << std::endl;
-                return true;
-            }
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        if (i % 10 == 0) std::cout << "Waiting for model to load..." << std::endl;
-    }
-
-    std::cerr << "Error: Timeout waiting for server to start." << std::endl;
-    return false;
-
-}
 
 int main() {
     httplib::Server svr;
     Storage rag_storage;
-
-    svr.Get("/health", [](const httplib::Request&, httplib::Response& res) {
-        res.status = 200;
-        res.set_content("ok", "text/plain");
-    });
+    Llama_manager llama;
 
     svr.Get("/documents", [&rag_storage](const httplib::Request&, httplib::Response& res) {
         std::vector<std::string> documents = rag_storage.get_documents();
-        json response = documents;
-        res.set_content(response.dump(), "application/json");
+        res.set_content(json(documents).dump(), "application/json");
     });
 
-    svr.Post("/reload", [](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/reload", [&llama](const httplib::Request& req, httplib::Response& res) {
         try
         {
             auto body = json::parse(req.body);
@@ -124,11 +27,10 @@ int main() {
             if (body.contains("model")) {
                 std::string model = body["model"];
 
-                ::model = model;
+                llama.set_model(model);
+                llama.start();
 
-                start_background_llama();
-
-                if (wait_for_server_ready()) {
+                if (llama.wait_for_ready()) {
                     res.status = 200;
                     res.set_content("ok", "text/plain");
                 } else {
@@ -147,7 +49,7 @@ int main() {
         }
     });
 
-    svr.Post("/connect", [](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/connect", [&llama](const httplib::Request& req, httplib::Response& res) {
         try
         {
             auto body = json::parse(req.body);
@@ -159,12 +61,13 @@ int main() {
                 connect_device_ssh(ip.c_str(), user.c_str(), password.c_str());
                 std::string ip_with_port = body["ip"].get<std::string>() + ":50051";
 
-                rpc_devices.push_back(ip_with_port);
+                llama.set_rpc_device(ip_with_port);
+
                 res.status = 200;
                 res.set_content("ok", "text/plain");
             } else {
                 res.status = 400;
-                res.set_content("{\"error\": \"The device attribute is missing\"}", "application/json");
+                res.set_content(json({{"error", "The device attribute is missing"}}).dump(), "application/json");
             }
         }
         catch(const std::runtime_error& e) {

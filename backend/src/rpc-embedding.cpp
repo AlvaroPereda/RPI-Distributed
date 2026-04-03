@@ -1,13 +1,12 @@
-#include "arg.h"
-#include "common.h"
-#include "log.h"
-#include "llama.h"
-#include "storage.hpp"
 #include "rpc-embedding.hpp"
 
-#include <ctime>
+#include "arg.h"
+#include "common.h"
+#include "llama.h"
+#include "log.h"
+#include "storage.hpp"
+
 #include <algorithm>
-#include <iomanip>
 #include <iostream>
 
 #if defined(_MSC_VER)

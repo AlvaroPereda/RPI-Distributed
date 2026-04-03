@@ -1,7 +1,7 @@
+#include "storage.hpp"
+
 #include <iostream>
 #include <vector>
-
-#include "storage.hpp"
 
 extern "C" {
     #define SQLITE_CORE 1
