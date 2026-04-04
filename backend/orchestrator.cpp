@@ -83,7 +83,7 @@ int main() {
         try
         {
             auto body = json::parse(req.body);
-            if (body.contains("prompt") || body.contains("use_rag")) {
+            if (body.contains("prompt")) {
                 std::string prompt = body["prompt"];
                 bool use_rag = body.value("use_rag", false);
 
