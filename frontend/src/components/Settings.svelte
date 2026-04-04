@@ -31,8 +31,10 @@
             <div class="select-wrapper">
                 <select id="model-select" bind:value={$model}>
                     <option value="" disabled>Select a model…</option>
-                    <option value="ggml-org/gemma-3-1b-it-GGUF">ggml-org/gemma-3-1b-it-GGUF</option>
-                    <option value="bartowski/Llama-3.2-1B-Instruct-GGUF">bartowski/Llama-3.2-1B-Instruct-GGUF</option>
+                    <option value="ggml-org/gemma-3-1b-it-GGUF">Gemma 3 - 1b</option>
+                    <option value="bartowski/Llama-3.2-1B-Instruct-GGUF">Llama 3.2 - 1B</option>
+                    <option value="bartowski/Qwen2.5-3B-GGUF">Qwen 2.5 - 3B</option>
+                    <option value="bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF">DeepSeek R1 - 8B</option>
                 </select>
                 <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"></polyline>
