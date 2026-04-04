@@ -14,11 +14,7 @@ int main() {
     Storage rag_storage;
     Llama_manager llama;
 
-    svr.Get("/documents", [&rag_storage](const httplib::Request&, httplib::Response& res) {
-        std::vector<std::string> documents = rag_storage.get_documents();
-        res.set_content(json(documents).dump(), "application/json");
-    });
-
+    // Gestión de modelos
     svr.Post("/reload", [&llama](const httplib::Request& req, httplib::Response& res) {
         try
         {
@@ -48,6 +44,7 @@ int main() {
         }
     });
 
+    // Gestión de dispositivos 
     svr.Post("/connect", [&llama](const httplib::Request& req, httplib::Response& res) {
         try
         {
@@ -79,6 +76,51 @@ int main() {
         }
     });
 
+    // RAG
+    svr.Get("/documents", [&rag_storage](const httplib::Request&, httplib::Response& res) {
+        std::vector<std::string> documents = rag_storage.get_documents();
+        res.set_content(json(documents).dump(), "application/json");
+    });
+
+    svr.Post("/document", [&rag_storage](const httplib::Request& req, httplib::Response& res) {
+        if (req.form.has_file("file")) {
+            httplib::FormData file = req.form.get_file("file");
+            std::cout << "File name: " << file.filename << std::endl;
+            std::cout << "File size: " << file.content.size() << std::endl;
+            generate_embeddings(rag_storage, file.filename, file.content);
+            res.status = 200;
+            res.set_content("ok", "text/plain");
+        } else {
+            res.status = 400;
+            res.set_content(json({{"error", "The file attribute is missing"}}).dump(), "application/json");
+        }
+    });
+    
+    svr.Delete("/document", [&rag_storage](const httplib::Request& req, httplib::Response& res) {
+        std::cout << "Received request to delete document" << std::endl;
+        try
+        {
+            auto body = json::parse(req.body);
+
+            if (body.contains("document_name")) {
+                std::string document_name = body["document_name"];
+                rag_storage.delete_document(document_name);
+                res.status = 200;
+                res.set_content("ok", "text/plain");
+            }
+            else {
+                res.status = 400;
+                res.set_content(json({{"error", "The document_name attribute is missing"}}).dump(), "application/json");
+            }
+        }
+        catch (...) {
+            res.status = 500;
+            res.set_content(json({{"error", "An unexpected error occurred on the server"}}).dump(), "application/json");
+        }
+        
+    });
+    
+    // Inferencia
     svr.Post("/chat/completions", [&rag_storage](const httplib::Request& req, httplib::Response& res) {
         try
         {
@@ -152,56 +194,14 @@ int main() {
                 );
             } else {
                 res.status = 400;
-                res.set_content("Missing file", "text/plain");
+                res.set_content(json({{"error", "The prompt attribute is missing"}}).dump(), "application/json");
             }
         }
-        catch (...)
-        {
-            res.status = 400;
-            res.set_content("{\"error\": \"Invalid JSON\"}", "application/json");
+        catch (...) {
+            res.status = 500;
+            res.set_content(json({{"error", "An unexpected error occurred on the server"}}).dump(), "application/json");
         }
 
-    });
-
-    svr.Post("/document", [&rag_storage](const httplib::Request& req, httplib::Response& res) {
-        if (req.form.has_file("file")) {
-            httplib::FormData file = req.form.get_file("file");
-            std::cout << "File name: " << file.filename << std::endl;
-            std::cout << "File size: " << file.content.size() << std::endl;
-
-            generate_embeddings(rag_storage, file.filename, file.content);
-
-            res.set_content("File received", "text/plain");
-
-        } else {
-            res.status = 400;
-            res.set_content("Missing file", "text/plain");
-        }
-    });
-
-    svr.Delete("/document", [&rag_storage](const httplib::Request& req, httplib::Response& res) {
-        std::cout << "Received request to delete document" << std::endl;
-        try
-        {
-            auto body = json::parse(req.body);
-
-            if (body.contains("document_name")) {
-                std::string document_name = body["document_name"];
-                rag_storage.delete_document(document_name);
-                res.status = 200;
-                res.set_content("ok", "text/plain");
-            }
-            else {
-                res.status = 400;
-                res.set_content("{\"error\": \"The document_name attribute is missing\"}", "application/json");
-            }
-        }
-        catch(...)
-        {
-            res.status = 400;
-            res.set_content("{\"error\": \"Invalid JSON\"}", "application/json");
-        }
-        
     });
 
     std::cout << "Starting server on port 5000..." << std::endl;

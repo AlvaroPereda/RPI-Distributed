@@ -15,7 +15,7 @@ static const char* DB_PATH = "rag/rag.db";
 Storage::Storage() {
     sqlite3_auto_extension((void(*)(void))sqlite3_vec_init);
     if (sqlite3_open(DB_PATH, &db) != SQLITE_OK) {
-        std::cerr << "Error opening database: " << sqlite3_errmsg(db) << std::endl;
+        throw std::runtime_error("Error opening database: " + std::string(sqlite3_errmsg(db)));
         db = nullptr;
     } else
         init_schema();
@@ -39,13 +39,13 @@ void Storage::init_schema() {
         "CREATE VIRTUAL TABLE IF NOT EXISTS document_chunks_vec USING vec0(embedding float[" + std::to_string(EMBEDDING_DIM) + "]);";
 
     if (sqlite3_exec(db, sql_metadata, nullptr, nullptr, &errMsg) != SQLITE_OK) {
-        std::cerr << "Error creating metadata table: " << errMsg << std::endl;
+        throw std::runtime_error("Error creating metadata table: " + std::string(errMsg));
         sqlite3_free(errMsg);
         return;
     }
 
     if (sqlite3_exec(db, sql_vec.c_str(), nullptr, nullptr, &errMsg) != SQLITE_OK) {
-        std::cerr << "Error creating vector table: " << errMsg << std::endl;
+        throw std::runtime_error("Error creating vector table: " + std::string(errMsg));
         sqlite3_free(errMsg);
         return;
     }
@@ -76,7 +76,7 @@ void Storage::insert_chunk(const std::string& document_name, const int chunk_ind
 
 void Storage::index_document(const std::string& document_name, const std::vector<std::string>& prompts, const std::vector<std::vector<float>>& embeddings) {
     for (size_t i = 0; i < embeddings.size(); ++i) {
-        std::cout << "Indexando chunk " << i << " del documento " << document_name << std::endl;
+        std::cout << "Indexing chunk " << i << " of document " << document_name << std::endl;
         insert_chunk(document_name, i, prompts[i], embeddings[i]);
     }
 }
