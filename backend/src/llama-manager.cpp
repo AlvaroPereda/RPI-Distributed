@@ -27,11 +27,12 @@ void Llama_manager::start() {
 
     if (pid == 0) {
         // Proceso hijo
+        std::string ctx  = std::to_string(LLAMA_CONTEXT);
+        std::string port = std::to_string(LLAMA_PORT);
         std::vector<const char*> args;
         args.push_back("./llama-server");
-        args.push_back("-hf");
-        args.push_back(model.c_str());
-        args.push_back("-c");args.push_back(std::to_string(LLAMA_CONTEXT).c_str());
+        args.push_back("-hf");args.push_back(model.c_str());
+        args.push_back("-c");args.push_back(ctx.c_str());
         if (!rpc_devices.empty()) {
             args.push_back("--rpc");
             for (const auto& device : rpc_devices) {
@@ -39,19 +40,18 @@ void Llama_manager::start() {
             }
         }
         args.push_back("--host");args.push_back(LLAMA_HOST);
-        args.push_back("--port");args.push_back(std::to_string(LLAMA_PORT).c_str());
+        args.push_back("--port");args.push_back(port.c_str());
         args.push_back(nullptr);
 
         execvp(args[0], const_cast<char* const*>(args.data()));
-
-        perror("execvp failed");
+        std::cerr << "execvp failed: " << strerror(errno) << std::endl;
         _exit(1);
     } else if (pid > 0) {
-        // Proceso padre 
+        // Proceso padre
         llama_pid = pid;
         std::cout << "New process started with PID: " << pid << std::endl;
     } else {
-        perror("Fork failed");
+        throw std::runtime_error("Failed to fork llama-server process: " + std::string(strerror(errno)));
     }
 }
 
@@ -67,7 +67,7 @@ void Llama_manager::stop() {
     }
 }
 
-bool Llama_manager::wait_for_ready()
+void Llama_manager::wait_for_ready()
 {
     httplib::Client cli("localhost", LLAMA_PORT);
     cli.set_connection_timeout(0, 500000); // 0.5 segundos timeout conexión
@@ -76,14 +76,13 @@ bool Llama_manager::wait_for_ready()
         int status;
         pid_t result = waitpid(llama_pid, &status, WNOHANG);
         if (result == llama_pid) {
-            std::cerr << "Error: llama-server process terminated unexpectedly." << std::endl;
-            return false;
+            throw std::runtime_error("llama-server process terminated unexpectedly");
         }
 
         if (auto res = cli.Get("/health")) {
             if (res->status == 200) {
                 std::cout << "Server is UP and Ready!" << std::endl;
-                return true;
+                return;
             }
         }
 
@@ -91,8 +90,7 @@ bool Llama_manager::wait_for_ready()
         if (i % READY_LOG_INTERVAL == 0) std::cout << "Waiting for model to load..." << std::endl;
     }
 
-    std::cerr << "Error: Timeout waiting for server to start." << std::endl;
-    return false;
+    throw std::runtime_error("Timeout waiting for llama-server to start");
 }
 
 void Llama_manager::set_rpc_device(const std::string &device) {

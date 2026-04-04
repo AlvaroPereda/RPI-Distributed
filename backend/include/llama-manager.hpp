@@ -15,7 +15,7 @@ class Llama_manager {
         ~Llama_manager();
         void start();
         void stop();
-        bool wait_for_ready();
+        void wait_for_ready();
         void set_rpc_device(const std::string &device);
         void set_model(const std::string& model);
 };

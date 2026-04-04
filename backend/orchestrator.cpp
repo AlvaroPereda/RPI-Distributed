@@ -29,23 +29,22 @@ int main() {
 
                 llama.set_model(model);
                 llama.start();
+                llama.wait_for_ready();
 
-                if (llama.wait_for_ready()) {
-                    res.status = 200;
-                    res.set_content("ok", "text/plain");
-                } else {
-                    res.status = 500;
-                    res.set_content("{\"error\": \"Model failed to load or timeout\"}", "application/json");
-                }
+                res.status = 200;
+                res.set_content("ok", "text/plain");
             } else {
                 res.status = 400;
-                res.set_content("{\"error\": \"The model attribute is missing\"}", "application/json");
+                res.set_content(json({{"error", "The model attribute is missing"}}).dump(), "application/json");
             }
-        }
-        catch(...)
-        {
+        } 
+        catch (const std::runtime_error& e) {
             res.status = 400;
-            res.set_content("{\"error\": \"Invalid JSON\"}", "application/json");
+            res.set_content(json({{"error", e.what()}}).dump(), "application/json");
+        }
+        catch (...) {
+            res.status = 500;
+            res.set_content(json({{"error", "An unexpected error occurred on the server"}}).dump(), "application/json");
         }
     });
 
@@ -67,14 +66,14 @@ int main() {
                 res.set_content("ok", "text/plain");
             } else {
                 res.status = 400;
-                res.set_content(json({{"error", "The device attribute is missing"}}).dump(), "application/json");
+                res.set_content(json({{"error", "Missing required fields: ip, user or password"}}).dump(), "application/json");
             }
         }
-        catch(const std::runtime_error& e) {
+        catch (const std::runtime_error& e) {
             res.status = 400;
             res.set_content(json({{"error", e.what()}}).dump(), "application/json");
         }
-        catch(...) {
+        catch (...) {
             res.status = 500;
             res.set_content(json({{"error", "An unexpected error occurred on the server"}}).dump(), "application/json");
         }
@@ -156,7 +155,7 @@ int main() {
                 res.set_content("Missing file", "text/plain");
             }
         }
-        catch(...)
+        catch (...)
         {
             res.status = 400;
             res.set_content("{\"error\": \"Invalid JSON\"}", "application/json");
