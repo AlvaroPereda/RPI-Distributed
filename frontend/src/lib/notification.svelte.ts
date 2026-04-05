@@ -6,7 +6,7 @@ class NotificationStore {
     queue = $state<Notification[]>([])
     visible = $state<Notification[]>([])
 
-    add(type: NotificationType, message: string, timeout = 4000): void {
+    add(type: NotificationType, message: string, timeout = 5000): void {
         const notification = { id: crypto.randomUUID(), type, message, timeout }
         if (this.visible.length < MAX_VISIBLE)
             this.visible.push(notification)

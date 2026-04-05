@@ -2,7 +2,6 @@
     import type { Prompt } from "$lib/types";
 
     let { history }: { history: Prompt[] }= $props()
-
 </script>
 
 <div id="chat-container">

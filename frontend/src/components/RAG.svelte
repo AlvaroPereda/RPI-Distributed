@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { notificationStore } from "$lib/notification.svelte";
     import { onMount } from "svelte";
 
     let documents: string[] = []
@@ -11,19 +12,29 @@
     }
 
     const uploadFile = async(event: Event) => {
-        const file = (event.target as HTMLInputElement).files?.[0]
-        if (!file) return
-        uploading = true
-        const form = new FormData()
-        form.append("file", file)
+        try {
+            const file = (event.target as HTMLInputElement).files?.[0]
+            if (!file) return
+            uploading = true
+            const form = new FormData()
+            form.append("file", file)
 
-        await fetch("/document", { 
-            method: "POST",
-            body: form 
-        })
-        await loadDocuments()
-        uploading = false
-        fileInput.value = ""
+            const response =  await fetch("/document", { 
+                method: "POST",
+                body: form 
+            })
+
+            if(!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error)
+            }
+
+            await loadDocuments()
+            uploading = false
+            fileInput.value = ""
+        } catch (error) {
+            notificationStore.add("error", error instanceof Error ? error.message : "Failed to upload file")
+        }
     }
 
     const deleteDocument = async(document_name: string) => {
@@ -33,6 +44,10 @@
             body: JSON.stringify({ document_name })
         })
         if (response.ok) await loadDocuments()
+        else {
+            const errorData = await response.json()
+            notificationStore.add("error", errorData.error || "Failed to delete document")
+        }
     }
 
     onMount(loadDocuments)

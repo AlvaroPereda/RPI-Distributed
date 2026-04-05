@@ -4,6 +4,7 @@
     import SSHModel from "./SSHModel.svelte";
     import RAG from "./RAG.svelte";
     import { ragToggel } from "$lib/rag.svelte";
+    import { notificationStore } from "$lib/notification.svelte";
 
     const startChat = async() => {
         if (!$model) return
@@ -14,6 +15,10 @@
             body: JSON.stringify({model: $model})
         })
         if (response.ok) goto("/chat")
+        else {
+            const errorData = await response.json()
+            notificationStore.add("error", errorData.error)
+        }
     }
 </script>
 

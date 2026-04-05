@@ -2,17 +2,16 @@
     import { fade, scale } from 'svelte/transition';
     import type { Device } from "$lib/types";
     import { deviceState } from '$lib/deviceState.svelte';
+    import { notificationStore } from '$lib/notification.svelte';
 
     let isOpen = $state(false)
     let device: Device = $state({ user: "", ip: "", password: "" })
-    let errorMessage = $state("")
 
     const handleKeydown = (e: KeyboardEvent) => {
         if (e.key === "Escape" && isOpen) isOpen = false
     }
 
     const connectDevice = async() => {
-        errorMessage = ""
         try {
             const response = await fetch("/connect", {
                 method: 'POST',
@@ -34,7 +33,7 @@
 
             isOpen = false;
         } catch (e) {
-            errorMessage = e instanceof Error ? e.message : "An unexpected error occurred on the server"
+            notificationStore.add("error", e instanceof Error ? e.message : "An unexpected error occurred on the server")
         }
     }
 </script>
@@ -91,15 +90,6 @@
                 <label for="password">Password</label>
                 <input type="password" id="password" bind:value={device.password} placeholder="••••••••">
             </div>
-
-            {#if errorMessage}
-                <p class="error">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
-                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {errorMessage}
-                </p>
-            {/if}
 
             <button type="button" class="action-btn" onclick={connectDevice}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">

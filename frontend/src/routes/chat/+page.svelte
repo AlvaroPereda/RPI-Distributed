@@ -4,6 +4,7 @@
     import Header from "../../components/Header.svelte";
     import Input from "../../components/Input.svelte";
     import { ragToggel } from "$lib/rag.svelte";
+    import { notificationStore } from "$lib/notification.svelte";
 
     let history: Prompt[] = $state([])
 
@@ -20,7 +21,11 @@
                     use_rag: ragToggel.use
                 })
             })
-            if (response.status !== 200) throw new Error("Error en la respuesta del servidor.")
+            if(!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error)
+            }
+
             if (!response.body) throw new Error("No response body")
 
             const reader = response.body.getReader(); // Abre un canal para toda la información
@@ -67,8 +72,8 @@
                     }
                 }
             }
-        } catch (error) {
-            console.error(`Error con la solicitud: ${error}`)
+        } catch (e) {
+            notificationStore.add("error", e instanceof Error ? e.message : "An unexpected error occurred on the server", 10000)
             history.push({role: 'assistant', content: "Ha ocurrido un error al procesar tu solicitud."})
         }
     }
