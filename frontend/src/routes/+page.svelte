@@ -1,8 +1,8 @@
 <script lang="ts">
     import ClusterCanvas from "../components/ClusterCanvas.svelte";
     import Settings from "../components/Settings.svelte";
-
 </script>
+
 <main class="config-page">
     <ClusterCanvas />
     <Settings />
