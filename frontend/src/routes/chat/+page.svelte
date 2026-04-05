@@ -3,27 +3,21 @@
     import Chat from "../../components/Chat.svelte";
     import Header from "../../components/Header.svelte";
     import Input from "../../components/Input.svelte";
+    import { ragToggel } from "$lib/rag.svelte";
 
     let history: Prompt[] = $state([])
 
     const handleNewPrompt = async(prompt: string) => {
         history = [...history, { role: 'user', content: prompt }]
         history = [...history, { role: 'assistant', content: '' }];
-
-        const systemInstruction:Prompt = {
-            role: "system",
-            content: "Eres un asistente. Solo responde en texto plano. No uses JSON."
-        }
-
-        const message = [systemInstruction, ...history]
-
+        
         try {
             const response = await fetch("/chat/completions", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     prompt: prompt,
-                    use_rag: true
+                    use_rag: ragToggel.use
                 })
             })
             if (response.status !== 200) throw new Error("Error en la respuesta del servidor.")

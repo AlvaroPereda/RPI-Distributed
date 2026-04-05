@@ -3,6 +3,7 @@
     import { goto } from "$app/navigation";
     import SSHModel from "./SSHModel.svelte";
     import RAG from "./RAG.svelte";
+    import { ragToggel } from "$lib/rag.svelte";
 
     const startChat = async() => {
         if (!$model) return
@@ -58,7 +59,19 @@
         <div class="divider"></div>
 
         <div class="section">
-            <p class="section-label">Knowledge Base</p>
+            <div class="section-header">
+                <p class="section-label">Knowledge Base</p>
+                <button
+                    class="toggle"
+                    class:active={ragToggel.use}
+                    onclick={() => ragToggel.use = !ragToggel.use}
+                    role="switch"
+                    aria-checked={ragToggel.use}
+                    title={ragToggel.use ? 'Disable RAG' : 'Enable RAG'}
+                >
+                    <span class="toggle-thumb"></span>
+                </button>
+            </div>
             <RAG />
         </div>
         
@@ -280,5 +293,48 @@
     @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.35; }
+    }
+
+    /* Knowledge Base section header */
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* Toggle switch */
+    .toggle {
+        position: relative;
+        width: 34px;
+        height: 19px;
+        background-color: var(--bg-surface-elevated);
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        cursor: pointer;
+        padding: 0;
+        flex-shrink: 0;
+        transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .toggle.active {
+        background-color: var(--color-accent-green);
+        border-color: var(--color-accent-green);
+        box-shadow: var(--shadow-glow);
+    }
+
+    .toggle-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 13px;
+        height: 13px;
+        background-color: var(--text-muted);
+        border-radius: 50%;
+        transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .toggle.active .toggle-thumb {
+        transform: translateX(15px);
+        background-color: #000;
     }
 </style>

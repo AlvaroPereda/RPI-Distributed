@@ -135,9 +135,8 @@ int main() {
                     std::vector<RetrievedChunk> rag_result = generate_embeddings(rag_storage, prompt);
                     for (const RetrievedChunk& chunk : rag_result)
                         context += chunk.content + "\n\n";
+                    std::cout << "Received context: " << context << std::endl;
                 }
-
-                std::cout << "Received context: " << context << std::endl;
 
                 json messages = json::array();
 
