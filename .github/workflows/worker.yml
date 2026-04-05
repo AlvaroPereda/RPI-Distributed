@@ -1,5 +1,8 @@
 name: Build worker in arm64 and amd64 and push to Docker Hub
 
+env:
+  VERSION: "v0.1.0"
+
 on:
   push:
     branches: [ "main" ]
@@ -37,7 +40,9 @@ jobs:
           context: ./worker/
           push: ${{ github.event_name == 'push' }}
           platforms: linux/amd64,linux/arm64
-          tags: ${{ secrets.DOCKER_USERNAME }}/llama-worker:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/llama-worker:${{ env.VERSION }}
+            ${{ secrets.DOCKER_USERNAME }}/llama-worker:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
