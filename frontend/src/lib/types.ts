@@ -4,8 +4,10 @@ export type Metrics = {
     predicted_n: number
 }
 
+type PromptRole = "user" | "assistant" | "system"
+
 export type Prompt = {
-    role: "user" | "assistant" | "system",
+    role: PromptRole,
     content: string,
     metrics?: Metrics
 }
@@ -25,4 +27,13 @@ export type Device = {
     user: string,
     ip: string,
     password?: string
+}
+
+export type NotificationType = "success" | "error"
+
+export type Notification = {
+    id: string,
+    type: NotificationType,
+    message: string,
+    timeout: number,
 }
