@@ -6,6 +6,8 @@
     let { notification }: { notification: Notification } = $props()
 
     onMount(() => {
+        if (notification.timeout === 0) return
+
         const timer = setTimeout(() => {
             notificationStore.remove(notification.id)
         }, notification.timeout)
@@ -20,6 +22,10 @@
             {#if notification.type === 'success'}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            {:else if notification.type === 'info'}
+                <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="9" stroke-dasharray="30 56"></circle>
                 </svg>
             {:else}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -36,7 +42,9 @@
             </svg>
         </button>
     </div>
-    <div class="progress-bar"></div>
+    {#if notification.timeout > 0}
+        <div class="progress-bar"></div>
+    {/if}
 </div>
 
 <style>
@@ -57,6 +65,10 @@
 
     .toast.error {
         border-left: 3px solid var(--color-accent-red);
+    }
+
+    .toast.info {
+        border-left: 3px solid var(--color-accent-blue, #60a5fa);
     }
 
     .toast-body {
@@ -86,6 +98,14 @@
 
     .toast.error .icon {
         color: var(--color-accent-red);
+    }
+
+    .toast.info .icon {
+        color: var(--color-accent-blue, #60a5fa);
+    }
+
+    .spinner {
+        animation: spin 1s linear infinite;
     }
 
     .message {
@@ -131,9 +151,18 @@
         background-color: var(--color-accent-red);
     }
 
+    .toast.info .progress-bar {
+        background-color: var(--color-accent-blue, #60a5fa);
+    }
+
     @keyframes shrink {
         from { width: 100%; }
         to { width: 0%; }
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
 
     @keyframes slide-in {

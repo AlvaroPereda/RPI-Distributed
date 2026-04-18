@@ -6,18 +6,28 @@
     import { ragToggel } from "$lib/rag.svelte";
     import { notificationStore } from "$lib/notification.svelte";
 
+    let loading = $state(false)
+
     const startChat = async() => {
         if (!$model) return
-
-        const response = await fetch("/reload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({model: $model})
-        })
-        if (response.ok) goto("/chat")
-        else {
-            const errorData = await response.json()
-            notificationStore.add("error", errorData.error)
+        loading = true
+        const loadingId = notificationStore.add("info", "Loading model in RAM...", 0)
+        try {
+            const response = await fetch("/reload", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({model: $model})
+            })
+            if (response.ok) goto("/chat")
+            else {
+                const errorData = await response.json()
+                notificationStore.add("error", errorData.error)
+            }
+        } catch (e) {
+            notificationStore.add("error", "Failed to start chat. Please try again.")
+        } finally {
+            notificationStore.remove(loadingId)
+            loading = false
         }
     }
 </script>
@@ -40,6 +50,7 @@
                     <option value="ggml-org/gemma-3-1b-it-GGUF">Gemma 3 - 1b</option>
                     <option value="bartowski/Llama-3.2-1B-Instruct-GGUF">Llama 3.2 - 1B</option>
                     <option value="bartowski/Qwen2.5-3B-GGUF">Qwen 2.5 - 3B</option>
+                    <option value="unsloth/gemma-4-E2B-it-GGUF">Gemma 4 - 5B</option>
                     <option value="bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF">DeepSeek R1 - 8B</option>
                 </select>
                 <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -83,7 +94,7 @@
     </div>
 
     <div class="sidebar-footer">
-        <button class="start-btn" onclick={startChat} disabled={!$model}>
+        <button class="start-btn" onclick={startChat} disabled={!$model || loading}>
             <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13">
                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
