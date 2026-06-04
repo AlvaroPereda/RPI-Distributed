@@ -52,6 +52,7 @@
                     <option value="bartowski/Qwen2.5-3B-GGUF">Qwen 2.5 - 3B</option>
                     <option value="unsloth/gemma-4-E2B-it-GGUF">Gemma 4 - 5B</option>
                     <option value="bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF">DeepSeek R1 - 8B</option>
+                    <option value="bartowski/Qwen2.5-32B-Instruct-GGUF:Q2_K">Qwen2.5 - 32B</option>
                 </select>
                 <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"></polyline>
