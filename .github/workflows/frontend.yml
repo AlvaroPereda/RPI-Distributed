@@ -1,7 +1,7 @@
 name: Build Frontend in arm64 and amd64 and push to Docker Hub
 
 env:
-  VERSION: "v0.1.0"
+  VERSION: "v0.2.0"
 
 on:
   push:
