@@ -1,4 +1,5 @@
 ARG LLAMA_TAG=b8565
+ARG SQLITE_VEC_TAG=0.1.9
 
 FROM debian:bookworm-slim AS builder
 ARG LLAMA_TAG
@@ -26,11 +27,13 @@ RUN --mount=type=cache,id=llama-server-build-${TARGETPLATFORM},target=/build \
 
 FROM debian:bookworm-slim AS builder-orchestrator
 ARG LLAMA_TAG
+ARG SQLITE_VEC_TAG
 ARG TARGETPLATFORM
 
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
+    curl \
     git \
     libsqlite3-dev \
     libssh-dev \
@@ -43,6 +46,11 @@ COPY src/                     /llama.cpp/examples/rpc-embedding/src/
 COPY include/                 /llama.cpp/examples/rpc-embedding/include/
 COPY CMakeLists.txt           /llama.cpp/examples/rpc-embedding/CMakeLists.txt
 COPY llama.cpp/CMakeLists.txt /llama.cpp/examples/CMakeLists.txt
+RUN curl -fsSL "https://github.com/asg017/sqlite-vec/releases/download/v${SQLITE_VEC_TAG}/sqlite-vec-${SQLITE_VEC_TAG}-amalgamation.tar.gz" \
+        -o sqlite-vec.tar.gz && \
+    tar -xzf sqlite-vec.tar.gz && \
+    cp sqlite-vec.c /llama.cpp/examples/rpc-embedding/src/sqlite-vec.c && \
+    cp sqlite-vec.h /llama.cpp/examples/rpc-embedding/include/sqlite-vec.h
 
 RUN --mount=type=cache,id=orchestrator-build-${TARGETPLATFORM},target=/build \
     cmake -S /llama.cpp -B /build \

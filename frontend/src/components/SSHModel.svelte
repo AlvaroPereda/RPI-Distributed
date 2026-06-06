@@ -279,18 +279,4 @@
     .action-btn:active {
         transform: translateY(0);
     }
-
-    .error {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        color: var(--color-accent-red);
-        font-family: var(--font-sans);
-        font-size: 12px;
-        margin: 0;
-        background-color: rgba(248, 113, 113, 0.08);
-        border: 1px solid rgba(248, 113, 113, 0.2);
-        border-radius: var(--border-radius-md);
-        padding: 9px 12px;
-    }
 </style>

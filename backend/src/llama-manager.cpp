@@ -29,15 +29,19 @@ void Llama_manager::start() {
         // Proceso hijo
         std::string ctx  = std::to_string(LLAMA_CONTEXT);
         std::string port = std::to_string(LLAMA_PORT);
+        std::string rpc_str;
         std::vector<const char*> args;
         args.push_back("./llama-server");
         args.push_back("-hf");args.push_back(model.c_str());
         args.push_back("-c");args.push_back(ctx.c_str());
         if (!rpc_devices.empty()) {
-            args.push_back("--rpc");
-            for (const auto& device : rpc_devices) {
-                args.push_back(device.c_str());
+            for (size_t i = 0; i < rpc_devices.size(); i++) {
+                if (i > 0) rpc_str += ",";
+                rpc_str += rpc_devices[i];
             }
+            args.push_back("--rpc");
+            args.push_back(rpc_str.c_str());
+            args.push_back("-ngl");args.push_back("999");
         }
         args.push_back("--host");args.push_back(LLAMA_HOST);
         args.push_back("--port");args.push_back(port.c_str());

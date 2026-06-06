@@ -29,7 +29,7 @@ export type Device = {
     password?: string
 }
 
-export type NotificationType = "success" | "error"
+export type NotificationType = "success" | "error" | "info"
 
 export type Notification = {
     id: string,

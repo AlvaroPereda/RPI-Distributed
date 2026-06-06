@@ -34,4 +34,4 @@ COPY --from=builder /rpc-server-bin /rpc-server
 
 EXPOSE 50051
 
-ENTRYPOINT [ "./rpc-server", "-p", "50051", "-H", "0.0.0.0" ]
+ENTRYPOINT [ "./rpc-server", "-p", "50051", "-H", "0.0.0.0", "-t", "4"]
